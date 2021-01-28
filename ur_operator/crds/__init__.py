@@ -1,3 +1,2 @@
-group = 'uroperator.brennerm.github.io'
-
 from .monitor import *
+from .constants import *

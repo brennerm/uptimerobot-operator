@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import kubernetes.client as k8s_client
-
 import enum
 
-from . import group
+import kubernetes.client as k8s_client
+
+from .constants import GROUP
+
 
 @enum.unique
 class MonitorType(enum.Enum):
@@ -13,6 +14,7 @@ class MonitorType(enum.Enum):
     PING = 3
     PORT = 4
     HEARTBEAT = 5
+
 
 @enum.unique
 class MonitorSubType(enum.Enum):
@@ -24,6 +26,7 @@ class MonitorSubType(enum.Enum):
     IMAP = 6
     CUSTOM = 99
 
+
 @enum.unique
 class MonitorStatus(enum.Enum):
     PAUSED = 0
@@ -31,6 +34,7 @@ class MonitorStatus(enum.Enum):
     UP = 2
     SEEMS_DOWN = 8
     DOWN = 9
+
 
 @enum.unique
 class MonitorHttpMethod(enum.Enum):
@@ -42,19 +46,20 @@ class MonitorHttpMethod(enum.Enum):
     DELETE = 6
     OPTIONS = 7
 
+
 class MonitorV1Beta1:
     plural = 'uptimerobotmonitors'
     singular = 'uptimerobotmonitor'
     kind = 'UptimeRobotMonitor'
     short_names = ['urm']
     version = 'v1beta1'
-    
+
     crd = k8s_client.V1CustomResourceDefinition(
         api_version='apiextensions.k8s.io/v1',
         kind='CustomResourceDefinition',
-        metadata=k8s_client.V1ObjectMeta(name=f'{plural}.{group}'),
+        metadata=k8s_client.V1ObjectMeta(name=f'{plural}.{GROUP}'),
         spec=k8s_client.V1CustomResourceDefinitionSpec(
-            group=group,
+            group=GROUP,
             versions=[k8s_client.V1CustomResourceDefinitionVersion(
                 name=version,
                 served=True,
@@ -77,7 +82,8 @@ class MonitorV1Beta1:
                                     ),
                                     'type': k8s_client.V1JSONSchemaProps(
                                         type='string',
-                                        enum=list(MonitorType.__members__.keys()),
+                                        enum=list(
+                                            MonitorType.__members__.keys()),
                                         description=f'Type of monitor, one of: {list(MonitorType.__members__.keys())}'
                                     )
                                 }

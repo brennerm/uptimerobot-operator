@@ -3,7 +3,7 @@ import sys
 import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../ur_operator')))
 
-import ur_operator.k8s as k8s
+from ur_operator.k8s import K8s
 import ur_operator.crds as crds
 import ur_operator.uptimerobotapi as uptimerobotapi
 
@@ -16,6 +16,7 @@ import pytest
 
 NAMESPACE = "ur-operator-testing"
 
+k8s = K8s()
 k8s_config.load_kube_config()
 core_api = k8s_client.CoreV1Api()
 networking_api = k8s_client.NetworkingV1beta1Api()

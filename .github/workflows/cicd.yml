@@ -1,0 +1,46 @@
+name: CI/CD
+
+on:
+  push:
+
+jobs:
+  linting_testing:
+    runs-on: ubuntu-latest
+    name: Lint Python code and run tests
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          pip install pipenv
+          pipenv install -d
+      - name: Lint Python code
+        run: pipenv run pylint ur_operator -E
+      - name: Execute unit tests
+        run: pipenv run pytest tests/test_unit.py
+      - name: Set up kind cluster
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          image: kindest/node:v1.19.1
+      - name: Execute E2E tests
+        env:
+          UPTIMEROBOT_API_KEY: ${{ secrets.UPTIMEROBOT_API_KEY }}
+        run: pipenv run pytest tests/test_e2e.py
+
+  build_docker_image:
+    runs-on: ubuntu-latest
+    name: Build and push Docker image
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - uses: nelonoel/branch-name@v1.0.1
+      - name: Build image
+        uses: docker/build-push-action@v2
+        with:
+          push: false
+          tags: ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }}
