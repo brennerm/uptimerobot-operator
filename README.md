@@ -42,20 +42,28 @@ spec:
 
 ```
 
-## Running local
+## Installation
+
+### Create an UptimeRobot API key
+
+1. Log in to your UptimeRobot account
+2. Go to "My Settings"
+3. Generate a "Main API Key" (the other API keys do not provide sufficient permissions to create, update and delete monitors)
+
+### Running local
 
 1. Install all dependencies `pipenv install`
 2. Set UptimeRobot API key `export UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY`
 3. Start operator `kopf run --standalone ur_operator/handlers.py`
 
-## Deploying to Kubernetes
+### Deploying to Kubernetes
 
 **Coming soon**
 
 ## Planned features
 
 - provide a Helm chart to ease deployment
-- support all configuration parameters for Monitors that Uptime Robot offers
+- support all configuration parameters for Monitors that UptimeRobot offers
 - add support for creating Uptime Robot alert contacts, maintenance windows and public status pages using Kubernetes resources
 - implement automatic detection of HTTP path of Ingress resources
 - add an integration for external-dns to support creating monitors for Service resources
