@@ -48,13 +48,22 @@ spec:
 
 1. Log in to your UptimeRobot account
 2. Go to "My Settings"
-3. Generate a "Main API Key" (the other API keys do not provide sufficient permissions to create, update and delete monitors)
+3. Generate and save "Main API Key" (the other API keys do not provide sufficient permissions to create, update and delete monitors)
 
 ### Running local
+
+> :information_source: **These command will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
 
 1. Install all dependencies `pipenv install`
 2. Set UptimeRobot API key `export UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY`
 3. Start operator `kopf run --standalone ur_operator/handlers.py`
+
+### Running in Docker
+
+> :information_source: **These command will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
+
+1. Build Docker image `docker build -t uptimerobot-operator .`
+2. Start container `docker run -e UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY -v ~/.kube:/home/ur_operator/.kube uptimerobot-operator`
 
 ### Deploying to Kubernetes
 
