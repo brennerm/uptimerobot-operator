@@ -1,3 +1,5 @@
+import logging
+
 import kubernetes.config as k8s_config
 import kubernetes.client as k8s_client
 
@@ -7,7 +9,14 @@ import crds
 
 class K8s:
     def __init__(self):
-        k8s_config.load_kube_config()
+        try:
+            k8s_config.load_kube_config()
+        except k8s_config.ConfigException:
+            k8s_config.load_incluster_config()
+        except k8s_config.ConfigException as error:
+            logging.error("Failed to load kube and incluster config, giving up...")
+            raise error
+
         self.custom_objects_api = k8s_client.CustomObjectsApi()
 
     @staticmethod
