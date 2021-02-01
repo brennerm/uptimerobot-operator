@@ -4,7 +4,7 @@ import kopf
 
 import crds
 from k8s import K8s
-import uptimerobotapi
+import uptimerobot
 
 MONITOR_ID_KEY = 'monitor_id'
 
@@ -35,7 +35,7 @@ def create_crds(logger):
 def init_uptimerobot_api(logger):
     global uptime_robot
     try:
-        uptime_robot = uptimerobotapi.create_uptimerobot_api()
+        uptime_robot = uptimerobot.create_uptimerobot_api()
     except Exception as error:
         logger.error('failed to create UptimeRobot API')
         raise error

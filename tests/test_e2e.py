@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../u
 
 from ur_operator.k8s import K8s
 import ur_operator.crds as crds
-import ur_operator.uptimerobotapi as uptimerobotapi
+import ur_operator.uptimerobot as uptimerobot
 
 import uptimerobotpy as ur
 import kubernetes.config as k8s_config
@@ -20,7 +20,7 @@ k8s = K8s()
 k8s_config.load_kube_config()
 core_api = k8s_client.CoreV1Api()
 networking_api = k8s_client.NetworkingV1beta1Api()
-uptime_robot = uptimerobotapi.create_uptimerobot_api()
+uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_monitor(namespace, name, wait_for_seconds=1, **spec):
