@@ -1,5 +1,5 @@
-LABEL org.opencontainers.image.source https://github.com/brennerm/uptimerobot-operator
 FROM python:3.8-alpine
+LABEL org.opencontainers.image.source https://github.com/brennerm/uptimerobot-operator
 RUN pip install pipenv
 WORKDIR /app
 ADD Pipfile /app
