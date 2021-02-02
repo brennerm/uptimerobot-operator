@@ -2,13 +2,13 @@ apiVersion: v1
 entries:
   uptimerobot-operator:
   - apiVersion: v2
-    appVersion: master
-    created: "2021-02-02T22:37:28.075039185Z"
+    appVersion: v0.1.0
+    created: "2021-02-02T22:58:44.768014858Z"
     description: A Kubernetes operator that creates uptime monitors for your ingresses
-    digest: db102de40acbdf48a7bb7d6b8ab31842ad3f2e6962a0f83768ed0b7dde278d41
+    digest: 972e25bc7967fec77ccaa2d64bc29b4718573a8b5b7dc4b840855c2589986219
     name: uptimerobot-operator
     type: application
     urls:
     - https://brennerm.github.io/uptimerobot-operator/helm/uptimerobot-operator-0.1.0.tgz
     version: 0.1.0
-generated: "2021-02-02T22:37:28.074272083Z"
+generated: "2021-02-02T22:58:44.767371153Z"
