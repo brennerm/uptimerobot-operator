@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "uptimerobot-operator.serviceAccountName" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "uptimerobot-operator.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: {{ include "uptimerobot-operator.serviceAccountName" . }}
+  apiGroup: rbac.authorization.k8s.io
