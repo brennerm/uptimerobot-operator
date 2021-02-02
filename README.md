@@ -58,12 +58,18 @@ spec:
 2. Set UptimeRobot API key `export UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY`
 3. Start operator `kopf run --standalone ur_operator/handlers.py`
 
-### Running in Docker
+### Running in self-built Docker
 
 > :information_source: **These commands will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
 
 1. Build Docker image `docker build -t uptimerobot-operator .`
 2. Start container `docker run -e UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY -v ~/.kube:/home/ur_operator/.kube uptimerobot-operator`
+
+### Running in pre-built Docker
+
+> :information_source: **This command will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
+
+1. Start container `docker run -e UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY -v ~/.kube:/home/ur_operator/.kube ghcr.io/brennerm/uptimerobot-operator:latest`
 
 ### Deploying to Kubernetes using Helm
 
