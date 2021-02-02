@@ -50,9 +50,16 @@ jobs:
           password: ${{ secrets.CR_PAT }}
       - name: Build Docker image
         run: docker build . --tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }}
-      - name: Push Docker image
+      - name: Push Docker image for branch
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
         run: docker push ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }}
+      - name: Push Docker image for tag
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push' }}
+        run: |
+          docker tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }} ghcr.io/brennerm/uptimerobot-operator:latest
+          docker tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }} ghcr.io/brennerm/uptimerobot-operator:${GITHUB_REF##*/}
+          docker push ghcr.io/brennerm/uptimerobot-operator:latest
+          docker push ghcr.io/brennerm/uptimerobot-operator:${GITHUB_REF##*/}
 
   build_helm_chart:
     runs-on: ubuntu-latest
