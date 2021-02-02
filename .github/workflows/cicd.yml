@@ -18,6 +18,12 @@ jobs:
           pipenv install -d
       - name: Lint Python code
         run: pipenv run pylint ur_operator -E
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.5.1
+      - name: Lint Helm chart
+        run: helm lint helm/uptimerobot-operator
       - name: Execute unit tests
         run: pipenv run pytest tests/test_unit.py
       - name: Set up kind cluster
@@ -53,9 +59,17 @@ jobs:
     needs: linting_testing
     name: Package and push Helm chart
     steps:
-      - name: Checkout
+      - name: Checkout uptimerobot-operator
         uses: actions/checkout@v2
+        with:
+          path: uptimerobot-operator
+      - name: Checkout Helm chart index
+        uses: actions/checkout@v2
+        with:
+          path: helm-chart-index
+          ref: helm-chart-index
       - name: Configure Git
+        working-directory: helm-chart-index
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
@@ -64,11 +78,15 @@ jobs:
         with:
           version: v3.5.1
       - name: Package Helm chart
-        run: helm package helm/uptimerobot-operator 
+        working-directory: helm-chart-index/helm
+        run: helm package ../../uptimerobot-operator/helm/uptimerobot-operator
+      - name: Update repo index
+        working-directory: helm-chart-index/helm
+        run: helm repo index . --merge index.yaml --url https://brennerm.github.io/uptimerobot-operator/helm
       - name: Release Helm chart
         if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-        uses: helm/chart-releaser-action@v1.0.0
-        with:
-          charts_dir: helm/
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        working-directory: helm-chart-index
+        run: |
+          git add helm
+          git commit -m "Index update on $(date +'%Y-%m-%d %H:%M:%S')"
+          git push origin helm-chart-index
