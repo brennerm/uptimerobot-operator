@@ -46,13 +46,13 @@ spec:
 
 ### Create an UptimeRobot API key
 
-1. Log in to your UptimeRobot account
+1. [Create an](https://uptimerobot.com/signUp) or login to your UptimeRobot account (no credit card required and they provide up to 50 monitors for free)
 2. Go to "My Settings"
 3. Generate and save "Main API Key" (the other API keys do not provide sufficient permissions to create, update and delete monitors)
 
 ### Running local
 
-> :information_source: **These command will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
+> :information_source: **These commands will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
 
 1. Install all dependencies `pipenv install`
 2. Set UptimeRobot API key `export UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY`
@@ -60,18 +60,21 @@ spec:
 
 ### Running in Docker
 
-> :information_source: **These command will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
+> :information_source: **These commands will make the operator work with your currently selected Kubernetes cluster (`kubectl config current-context`).**
 
 1. Build Docker image `docker build -t uptimerobot-operator .`
 2. Start container `docker run -e UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY -v ~/.kube:/home/ur_operator/.kube uptimerobot-operator`
 
-### Deploying to Kubernetes
+### Deploying to Kubernetes using Helm
 
-**Coming soon**
+1. Add the uptimerobot-operator uptimerobot-operato chart repo `helm repo add uptimerobot-operator https://brennerm.github.io/uptimerobot-operator/helm`
+2. Deploy the Helm chart `helm upgrade --install uptimerobot-operator uptimerobot-operator --set uptimeRobotApiKey=$MY_UPTIMEROBOT_API_KEY`
+
+Have a look at the [values file](helm/uptimerobot-operator/values.yaml) if you want to customize the deployment.
 
 ## Planned features
 
-- provide a Helm chart to ease deployment
+- provide a Helm chart to ease deployment :heavy_check_mark:
 - support all configuration parameters for Monitors that UptimeRobot offers
 - add support for creating Uptime Robot alert contacts, maintenance windows and public status pages using Kubernetes resources
 - implement automatic detection of HTTP path of Ingress resources
