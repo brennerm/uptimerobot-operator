@@ -36,6 +36,8 @@ spec:
           env:
             - name: UPTIMEROBOT_API_KEY
               value: {{ required "uptimeRobotApiKey has not been provided!" .Values.uptimeRobotApiKey | quote }}
+            - name: URO_DISABLE_INGRESS_HANDLING
+              value: {{ .Values.disableIngressHandling | quote }}
           livenessProbe:
             httpGet:
               path: /

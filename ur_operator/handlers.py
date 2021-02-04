@@ -5,9 +5,11 @@ import kopf
 import crds
 from k8s import K8s
 import uptimerobot
+from config import Config
 
 MONITOR_ID_KEY = 'monitor_id'
 
+config = Config()
 uptime_robot = None
 k8s = None
 
@@ -38,7 +40,7 @@ def init_uptimerobot_api(logger):
         uptime_robot = uptimerobot.create_uptimerobot_api()
     except Exception as error:
         logger.error('failed to create UptimeRobot API')
-        raise error
+        raise kopf.PermanentError(error)
 
 
 def create_monitor(logger, **kwargs):
@@ -102,6 +104,8 @@ def get_identifier(status: dict):
 
 @kopf.on.startup()
 def startup(logger, **_):
+    if(config.DISABLE_INGRESS_HANDLING):
+        logger.info('handling of Ingress resources has been disabled')
     global k8s
     k8s = K8s()
     init_uptimerobot_api(logger)
@@ -123,6 +127,10 @@ def on_create(name: str, spec: dict, logger, **_):
 
 @kopf.on.create('networking.k8s.io', 'v1', 'ingresses')
 def on_ingress_create(name: str, namespace: str, spec: dict, logger, **_):
+    if config.DISABLE_INGRESS_HANDLING:
+        logger.info('handling of Ingress resources has been disabled')
+        return
+
     index = 0
     for rule in spec['rules']:
         if 'host' not in rule:
@@ -141,6 +149,10 @@ def on_ingress_create(name: str, namespace: str, spec: dict, logger, **_):
 
 @kopf.on.update('networking.k8s.io', 'v1', 'ingresses')
 def on_ingress_update(name: str, namespace: str, spec: dict, diff: list, logger, **_):
+    if config.DISABLE_INGRESS_HANDLING:
+        logger.info('handling of Ingress resources has been disabled')
+        return
+
     previous_rule_count = len(diff[0][2])
     index = 0
 
