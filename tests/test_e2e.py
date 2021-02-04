@@ -3,15 +3,17 @@ import kopf.testing as kt
 import kubernetes.client as k8s_client
 import kubernetes.config as k8s_config
 import uptimerobotpy as ur
-import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
-from ur_operator.k8s import K8s
-import os
 import sys
+
+import os
 import time
 sys.path.insert(0, os.path.abspath(os.path.join(
     os.path.dirname(__file__), '../ur_operator')))
 
+
+import ur_operator.uptimerobot as uptimerobot
+import ur_operator.crds as crds
+from ur_operator.k8s import K8s
 
 NAMESPACE = "ur-operator-testing"
 
