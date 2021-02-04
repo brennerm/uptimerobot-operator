@@ -38,10 +38,13 @@ spec:
               value: {{ required "uptimeRobotApiKey has not been provided!" .Values.uptimeRobotApiKey | quote }}
             - name: URO_DISABLE_INGRESS_HANDLING
               value: {{ .Values.disableIngressHandling | quote }}
+            - name: KOPF_OPTS
+              value: "--all-namespaces --liveness=http://0.0.0.0:8080/healthz"
           livenessProbe:
             httpGet:
-              path: /
-              port: http
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

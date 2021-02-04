@@ -1,3 +1,5 @@
+import logging
+
 import kubernetes.config as k8s_config
 import kubernetes.client as k8s_client
 import kopf
@@ -12,6 +14,10 @@ MONITOR_ID_KEY = 'monitor_id'
 config = Config()
 uptime_robot = None
 k8s = None
+
+
+# disable liveness check request logs
+logging.getLogger('aiohttp.access').setLevel(logging.WARN)
 
 
 def create_crds(logger):
