@@ -15,12 +15,12 @@ rules:
     resources: [events]
     verbs: [create]
 
-{% if not .Values.disableIngressHandling %}
+{{ if not .Values.disableIngressHandling }}
   - apiGroups: ["networking.k8s.io"]
     resources: [ingresses]
     verbs: [get, list, watch, patch]
 
-{% endif %}
+{{ end }}
   - apiGroups: [uroperator.brennerm.github.io]
     resources: ["*"]
     verbs: ["*"]
