@@ -40,7 +40,7 @@ def init_uptimerobot_api(logger):
         uptime_robot = uptimerobot.create_uptimerobot_api()
     except Exception as error:
         logger.error('failed to create UptimeRobot API')
-        raise error
+        raise kopf.PermanentError(error)
 
 
 def create_monitor(logger, **kwargs):
