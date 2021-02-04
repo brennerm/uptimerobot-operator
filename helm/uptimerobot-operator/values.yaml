@@ -1,5 +1,10 @@
 # Default values for uptimerobot-operator.
+# the API key of your UptimeRobot account
 uptimeRobotApiKey: ""
+
+# flag to disable handling of Ingress resources
+# set to true if you don't want to create monitors automatically for your ingresses
+disableIngressHandling: false
 
 image:
   repository: ghcr.io/brennerm/uptimerobot-operator

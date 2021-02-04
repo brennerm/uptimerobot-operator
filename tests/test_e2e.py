@@ -1,17 +1,16 @@
+import pytest
+import kopf.testing as kt
+import kubernetes.client as k8s_client
+import kubernetes.config as k8s_config
+import uptimerobotpy as ur
+import ur_operator.uptimerobot as uptimerobot
+import ur_operator.crds as crds
+from ur_operator.k8s import K8s
 import os
 import sys
 import time
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../ur_operator')))
-
-from ur_operator.k8s import K8s
-import ur_operator.crds as crds
-import ur_operator.uptimerobot as uptimerobot
-
-import uptimerobotpy as ur
-import kubernetes.config as k8s_config
-import kubernetes.client as k8s_client
-import kopf.testing as kt
-import pytest
+sys.path.insert(0, os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '../ur_operator')))
 
 
 NAMESPACE = "ur-operator-testing"
@@ -103,162 +102,204 @@ def delete_namespace(name, timeout_seconds=20):
     raise TimeoutError()
 
 
-@pytest.fixture(scope='session')
-def kopf_runner():
-    with kt.KopfRunner(['run', '--standalone', 'ur_operator/handlers.py']) as runner:
-        # wait for operator to start
-        time.sleep(2)
-        yield runner
+class TestDefaultOperator:
+    @staticmethod
+    @pytest.fixture(scope='class')
+    def kopf_runner():
+        with kt.KopfRunner(['run', '--standalone', '-A', 'ur_operator/handlers.py']) as runner:
+            # wait for operator to start
+            time.sleep(2)
+            yield runner
+
+    @staticmethod
+    @pytest.fixture(autouse=True)
+    def namespace_handling(kopf_runner):
+        core_api.create_namespace(k8s_client.V1Namespace(
+            metadata=k8s_client.V1ObjectMeta(name=NAMESPACE),
+        ))
+
+        yield
+
+        delete_namespace(NAMESPACE)
+
+    def test_create_monitor(self):
+        name = 'foo'
+        url = 'https://foo.com'
+        monitor_type = crds.MonitorType.HTTP_HTTPS.name
+
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['friendly_name'] == name
+        assert monitors[0]['url'] == url
+        assert monitors[0]['type'] == crds.MonitorType.HTTP_HTTPS.value
+
+    def test_create_monitor_with_friendly_name(self):
+        name = 'foo'
+        friendly_name = "bar"
+        url = 'https://foo.com'
+        monitor_type = crds.MonitorType.HTTP_HTTPS.name
+
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type,
+                              url=url, friendlyName=friendly_name)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['friendly_name'] == friendly_name
+
+    def test_update_monitor(self):
+        name = 'foo'
+        new_name = 'bar'
+        url = 'https://foo.com'
+        monitor_type = crds.MonitorType.HTTP_HTTPS.name
+
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['friendly_name'] == name
+
+        update_k8s_ur_monitor(NAMESPACE, name, friendlyName=new_name)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['friendly_name'] == new_name
+
+    def test_update_monitor_type(self):
+        name = 'foo'
+        url = 'https://foo.com'
+        monitor_type = crds.MonitorType.HTTP_HTTPS.name
+        new_monitor_type = crds.MonitorType.PING.name
+
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['type'] == crds.MonitorType.HTTP_HTTPS.value
+
+        update_k8s_ur_monitor(NAMESPACE, name, type=new_monitor_type)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['type'] == crds.MonitorType.PING.value
+
+    def test_delete_monitor(self):
+        name = 'foo'
+        url = 'https://foo.com'
+        monitor_type = crds.MonitorType.HTTP_HTTPS.name
+
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+
+        delete_k8s_ur_monitor(NAMESPACE, name)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 0
+
+    def test_create_ingress(self):
+        name = 'foo'
+        url = 'foo.com'
+
+        create_k8s_ingress(NAMESPACE, name, [url])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+        assert monitors[0]['friendly_name'].startswith(name)
+        assert monitors[0]['url'] == url
+        assert monitors[0]['type'] == crds.MonitorType.PING.value
+
+    def test_update_ingress_add_host(self):
+        name = 'foo'
+        url1 = 'foo.com'
+        url2 = 'bar.com'
+
+        create_k8s_ingress(NAMESPACE, name, [url1])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+
+        update_k8s_ingress(NAMESPACE, name, [url1, url2])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 2
+
+    def test_update_ingress_remove_host(self):
+        name = 'foo'
+        url1 = 'foo.com'
+        url2 = 'bar.com'
+
+        create_k8s_ingress(NAMESPACE, name, [url1, url2])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 2
+
+        update_k8s_ingress(NAMESPACE, name, [url1])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+
+    def test_delete_ingress(self):
+        name = 'foo'
+        url = 'foo.com'
+
+        create_k8s_ingress(NAMESPACE, name, [url])
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 1
+
+        delete_k8s_ingress(NAMESPACE, name)
+
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 0
 
 
-@pytest.fixture(autouse=True)
-def namespace_handling(kopf_runner):
-    core_api.create_namespace(k8s_client.V1Namespace(
-        metadata=k8s_client.V1ObjectMeta(name=NAMESPACE),
-    ))
+class TestOperatorWithoutIngressHandling:
+    @staticmethod
+    @pytest.fixture(scope='class')
+    def kopf_runner_without_ingress_handling():
+        os.environ['URO_DISABLE_INGRESS_HANDLING'] = '1'
 
-    yield
+        with kt.KopfRunner(['run', '--standalone', '-A', 'ur_operator/handlers.py']) as runner:
+            # wait for operator to start
+            time.sleep(2)
+            yield runner
 
-    delete_namespace(NAMESPACE)
+        os.environ.pop('URO_DISABLE_INGRESS_HANDLING')
 
+    @staticmethod
+    @pytest.fixture(autouse=True)
+    def namespace_handling(kopf_runner_without_ingress_handling):
+        core_api.create_namespace(k8s_client.V1Namespace(
+            metadata=k8s_client.V1ObjectMeta(name=NAMESPACE),
+        ))
 
-def test_create_monitor():
-    name = 'foo'
-    url = 'https://foo.com'
-    monitor_type = crds.MonitorType.HTTP_HTTPS.name
+        yield
 
-    create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
+        delete_namespace(NAMESPACE)
 
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['friendly_name'] == name
-    assert monitors[0]['url'] == url
-    assert monitors[0]['type'] == crds.MonitorType.HTTP_HTTPS.value
+    def test_create_ingress(self):
+        name = 'foo'
+        url = 'foo.com'
 
+        create_k8s_ingress(NAMESPACE, name, [url])
 
-def test_create_monitor_with_friendly_name():
-    name = 'foo'
-    friendly_name = "bar"
-    url = 'https://foo.com'
-    monitor_type = crds.MonitorType.HTTP_HTTPS.name
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 0
 
-    create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type,
-                          url=url, friendlyName=friendly_name)
+    def test_update_ingress_add_host(self):
+        name = 'foo'
+        url1 = 'foo.com'
+        url2 = 'bar.com'
 
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['friendly_name'] == friendly_name
+        create_k8s_ingress(NAMESPACE, name, [url1])
 
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 0
 
-def test_update_monitor():
-    name = 'foo'
-    new_name = 'bar'
-    url = 'https://foo.com'
-    monitor_type = crds.MonitorType.HTTP_HTTPS.name
+        update_k8s_ingress(NAMESPACE, name, [url1, url2])
 
-    create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['friendly_name'] == name
-
-    update_k8s_ur_monitor(NAMESPACE, name, friendlyName=new_name)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['friendly_name'] == new_name
-
-
-def test_update_monitor_type():
-    name = 'foo'
-    url = 'https://foo.com'
-    monitor_type = crds.MonitorType.HTTP_HTTPS.name
-    new_monitor_type = crds.MonitorType.PING.name
-
-    create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['type'] == crds.MonitorType.HTTP_HTTPS.value
-
-    update_k8s_ur_monitor(NAMESPACE, name, type=new_monitor_type)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['type'] == crds.MonitorType.PING.value
-
-
-def test_delete_monitor():
-    name = 'foo'
-    url = 'https://foo.com'
-    monitor_type = crds.MonitorType.HTTP_HTTPS.name
-
-    create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type, url=url)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-
-    delete_k8s_ur_monitor(NAMESPACE, name)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 0
-
-
-def test_create_ingress():
-    name = 'foo'
-    url = 'foo.com'
-
-    create_k8s_ingress(NAMESPACE, name, [url])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-    assert monitors[0]['friendly_name'].startswith(name)
-    assert monitors[0]['url'] == url
-    assert monitors[0]['type'] == crds.MonitorType.PING.value
-
-
-def test_update_ingress_add_host():
-    name = 'foo'
-    url1 = 'foo.com'
-    url2 = 'bar.com'
-
-    create_k8s_ingress(NAMESPACE, name, [url1])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-
-    update_k8s_ingress(NAMESPACE, name, [url1, url2])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 2
-
-
-def test_update_ingress_remove_host():
-    name = 'foo'
-    url1 = 'foo.com'
-    url2 = 'bar.com'
-
-    create_k8s_ingress(NAMESPACE, name, [url1, url2])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 2
-
-    update_k8s_ingress(NAMESPACE, name, [url1])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-
-
-def test_delete_ingress():
-    name = 'foo'
-    url = 'foo.com'
-
-    create_k8s_ingress(NAMESPACE, name, [url])
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 1
-
-    delete_k8s_ingress(NAMESPACE, name)
-
-    monitors = uptime_robot.get_all_monitors()['monitors']
-    assert len(monitors) == 0
+        monitors = uptime_robot.get_all_monitors()['monitors']
+        assert len(monitors) == 0
