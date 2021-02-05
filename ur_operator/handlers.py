@@ -120,12 +120,9 @@ def startup(logger, **_):
 
 @kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
 def on_create(name: str, spec: dict, logger, **_):
-    friendly_name = spec.get('friendlyName', name)
     identifier = create_monitor(
         logger,
-        friendly_name=friendly_name,
-        url=spec['url'],
-        type=crds.MonitorType[spec['type']].value
+        **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
     )
 
     return {MONITOR_ID_KEY: identifier}
@@ -199,26 +196,20 @@ def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
         raise kopf.PermanentError(
             "was not able to determine the monitor ID for update") from error
 
-    friendly_name = spec.get('friendlyName', name)
-
     if monitor_type_changed(diff):
         logger.info('monitor type changed, need to delete and recreate')
         delete_monitor(logger, identifier)
 
         identifier = create_monitor(
             logger,
-            friendly_name=friendly_name,
-            url=spec['url'],
-            type=crds.MonitorType[spec['type']].value
+            **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
         )
 
     else:
         identifier = update_monitor(
             logger,
             identifier,
-            friendly_name=friendly_name,
-            url=spec['url'],
-            type=crds.MonitorType[spec['type']].value
+            **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
         )
 
     return {MONITOR_ID_KEY: identifier}
