@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
 import enum
+import re
 
 import kubernetes.client as k8s_client
 
 from .constants import GROUP
 
+
+pattern = re.compile(r'(?<!^)(?=[A-Z])')
+camel_to_snake_case = lambda string: pattern.sub('_', string).lower()
 
 @enum.unique
 class MonitorType(enum.Enum):
@@ -26,16 +30,6 @@ class MonitorSubType(enum.Enum):
     IMAP = 6
     CUSTOM = 99
 
-
-@enum.unique
-class MonitorStatus(enum.Enum):
-    PAUSED = 0
-    NOT_CHECKED_YET = 1
-    UP = 2
-    SEEMS_DOWN = 8
-    DOWN = 9
-
-
 @enum.unique
 class MonitorHttpMethod(enum.Enum):
     HEAD = 1
@@ -46,6 +40,32 @@ class MonitorHttpMethod(enum.Enum):
     DELETE = 6
     OPTIONS = 7
 
+@enum.unique
+class MonitorKeywordType(enum.Enum):
+    EXISTS = 1
+    NOT_EXISTS = 2
+
+@enum.unique
+class MonitorStatus(enum.Enum):
+    PAUSED = 0
+    NOT_CHECKED_YET = 1
+
+
+@enum.unique
+class MonitorHttpAuthType(enum.Enum):
+    BASIC_AUTH = 1
+    DIGEST = 2
+
+@enum.unique
+class MonitorPostType(enum.Enum):
+    KEY_VALUE = 1
+    RAW = 2
+
+
+@enum.unique
+class MonitorPostContentType(enum.Enum):
+    TEXT_HTML = 0
+    APPLICATION_JSON = 1
 
 class MonitorV1Beta1:
     plural = 'uptimerobotmonitors'
@@ -85,6 +105,89 @@ class MonitorV1Beta1:
                                         enum=list(
                                             MonitorType.__members__.keys()),
                                         description=f'Type of monitor, one of: {list(MonitorType.__members__.keys())}'
+                                    ),
+                                    'subType': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorSubType.__members__.keys()),
+                                        description=f'Subtype of monitor, one of: {list(MonitorType.__members__.keys())}'
+                                    ),
+                                    'port': k8s_client.V1JSONSchemaProps(
+                                        type='integer',
+                                        description=f'Port to monitor when using monitor sub type {MonitorType.PORT.name}'
+                                    ),
+                                    'keywordType': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorKeywordType.__members__.keys()),
+                                        description=f'Keyword type when using monitor type {MonitorType.KEYWORD.name}, one of: {list(MonitorKeywordType.__members__.keys())}'
+                                    ),
+                                    'keywordValue': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description=f'Keyword value when using monitor type {MonitorType.KEYWORD.name}'
+                                    ),
+                                    'interval': k8s_client.V1JSONSchemaProps(
+                                        type='integer',
+                                        multiple_of=60.,
+                                        description='The interval for the monitoring check (300 seconds by default)'
+                                    ),
+                                    'httpUsername': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description=f'Used for password protected pages when using monitor type {MonitorType.HTTP_HTTPS.name} or {MonitorType.KEYWORD.name}'
+                                    ),
+                                    'httpPassword': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description=f'Used for password protected pages when using monitor type {MonitorType.HTTP_HTTPS.name} or {MonitorType.KEYWORD.name}'
+                                    ),
+                                    'httpAuthType': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorHttpAuthType.__members__.keys()),
+                                        description=f'Used for password protected pages when using monitor type {MonitorType.HTTP_HTTPS.name} or {MonitorType.KEYWORD.name}, one of: {list(MonitorHttpAuthType.__members__.keys())}'
+                                    ),
+                                    'httpMethod': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorHttpMethod.__members__.keys()),
+                                        description=f'The HTTP method to be used, one of: {list(MonitorHttpMethod.__members__.keys())}'
+                                    ),
+                                    'postType': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorPostType.__members__.keys()),
+                                        description='The format of data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests'
+                                    ),
+                                    'postContentType': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        enum=list(
+                                            MonitorPostContentType.__members__.keys()),
+                                        description=f'The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: {list(MonitorPostContentType.__members__.keys())}'
+                                    ),
+                                    'postValue': k8s_client.V1JSONSchemaProps(
+                                        type='object',
+                                        description='The data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests',
+                                        x_kubernetes_preserve_unknown_fields=True
+                                    ),
+                                    'customHttpHeaders': k8s_client.V1JSONSchemaProps(
+                                        type='object',
+                                        description='Custom HTTP headers to be sent along monitor request, formatted as JSON',
+                                        x_kubernetes_preserve_unknown_fields=True
+                                    ),
+                                    'customHttpStatuses': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description='Allows to define HTTP status codes that will be handled as up or down, e.g. 404:0_200:1 to accept 404 as down and 200 as up'
+                                    ),
+                                    'ignoreSslErrors': k8s_client.V1JSONSchemaProps(
+                                        type='boolean',
+                                        description='Flag to ignore SSL certificate related issues'
+                                    ),
+                                    'alertContacts': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description='Alert contacts to be notified when monitor goes up or down. For syntax check https://uptimerobot.com/api/#newMonitorWrap'
+                                    ),
+                                    'mwindows': k8s_client.V1JSONSchemaProps(
+                                        type='string',
+                                        description='Maintenance window IDs for this monitor'
                                     )
                                 }
                             ),
@@ -105,3 +208,27 @@ class MonitorV1Beta1:
             )
         )
     )
+
+    @staticmethod
+    def spec_to_request_dict(name: str, spec: dict) -> dict:
+        # convert all keys from camel to snake case
+        request_dict = {camel_to_snake_case(k):v for k,v in spec.items()}
+        request_dict['friendly_name'] = request_dict.get('friendly_name', name)
+        request_dict['type'] = MonitorType[spec['type']].value
+
+        print(request_dict)
+
+        # map enum values
+        for key, enum_class in {
+            'sub_type': MonitorSubType,
+            'keyword_type': MonitorKeywordType,
+            'http_auth_type': MonitorHttpAuthType,
+            'http_method': MonitorHttpMethod,
+            'post_type': MonitorPostType,
+            'post_content_type': MonitorPostContentType
+        }.items():
+            request_dict[key] = enum_class[request_dict[key]].value if key in request_dict else None
+
+        print(request_dict)
+        # drop None entries
+        return {k:v for k,v in request_dict.items() if v is not None}
