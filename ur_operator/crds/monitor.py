@@ -81,6 +81,8 @@ class MonitorV1Beta1:
     short_names = ['urm']
     version = 'v1beta1'
 
+    required_props = ['url', 'type']
+
     spec_properties = {
         'friendlyName': k8s_client.V1JSONSchemaProps(
             type='string',
@@ -94,13 +96,13 @@ class MonitorV1Beta1:
             type='string',
             enum=list(
                 MonitorType.__members__.keys()),
-            description=f'Type of monitor, one of: {list(MonitorType.__members__.keys())}'
+            description=f'Type of monitor, one of: {",".join(list(MonitorType.__members__.keys()))}'
         ),
         'subType': k8s_client.V1JSONSchemaProps(
             type='string',
             enum=list(
                 MonitorSubType.__members__.keys()),
-            description=f'Subtype of monitor, one of: {list(MonitorType.__members__.keys())}'
+            description=f'Subtype of monitor, one of: {",".join(list(MonitorType.__members__.keys()))}'
         ),
         'port': k8s_client.V1JSONSchemaProps(
             type='integer',
@@ -110,7 +112,7 @@ class MonitorV1Beta1:
             type='string',
             enum=list(
                 MonitorKeywordType.__members__.keys()),
-            description=f'Keyword type when using monitor type {MonitorType.KEYWORD.name}, one of: {list(MonitorKeywordType.__members__.keys())}'
+            description=f'Keyword type when using monitor type {MonitorType.KEYWORD.name}, one of: {",".join(list(MonitorKeywordType.__members__.keys()))}'
         ),
         'keywordValue': k8s_client.V1JSONSchemaProps(
             type='string',
@@ -133,13 +135,13 @@ class MonitorV1Beta1:
             type='string',
             enum=list(
                 MonitorHttpAuthType.__members__.keys()),
-            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}, one of: {list(MonitorHttpAuthType.__members__.keys())}'
+            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}, one of: {",".join(list(MonitorHttpAuthType.__members__.keys()))}'
         ),
         'httpMethod': k8s_client.V1JSONSchemaProps(
             type='string',
             enum=list(
                 MonitorHttpMethod.__members__.keys()),
-            description=f'The HTTP method to be used, one of: {list(MonitorHttpMethod.__members__.keys())}'
+            description=f'The HTTP method to be used, one of: {",".join(list(MonitorHttpMethod.__members__.keys()))}'
         ),
         'postType': k8s_client.V1JSONSchemaProps(
             type='string',
@@ -151,7 +153,7 @@ class MonitorV1Beta1:
             type='string',
             enum=list(
                 MonitorPostContentType.__members__.keys()),
-            description=f'The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: {list(MonitorPostContentType.__members__.keys())}'
+            description=f'The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: {",".join(list(MonitorPostContentType.__members__.keys()))}'
         ),
         'postValue': k8s_client.V1JSONSchemaProps(
             type='object',
@@ -197,7 +199,7 @@ class MonitorV1Beta1:
                         properties={
                             'spec': k8s_client.V1JSONSchemaProps(
                                 type='object',
-                                required=['url', 'type'],
+                                required=required_props,
                                 properties=spec_properties
                             ),
                             'status': k8s_client.V1JSONSchemaProps(

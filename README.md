@@ -85,6 +85,56 @@ Have a look at the [values file](helm/uptimerobot-operator/values.yaml) if you w
 
 1. Start container `docker run -e UPTIMEROBOT_API_KEY=$MY_UPTIMEROBOT_API_KEY -v ~/.kube:/home/ur_operator/.kube ghcr.io/brennerm/uptimerobot-operator:latest`
 
+## Documentation
+
+### UptimeRobotMonitor
+
+The UptimeRobotMonitor resource supports all current parameters for monitors that UptimeRobot offers. Below you can find a list that contains all of them.
+
+|key|type|description|
+|-|-|-|
+|friendlyName|string|Friendly name of monitor, defaults to name of UptimeRobotMonitor object|
+|url (required)|string|URL that will be monitored|
+|type (required)|string|Type of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
+|subType|string|Subtype of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
+|port|integer|Port to monitor when using monitor sub type PORT|
+|keywordType|string|Keyword type when using monitor type KEYWORD, one of: EXISTS,NOT_EXISTS|
+|keywordValue|string|Keyword value when using monitor type KEYWORD|
+|interval|integer|The interval for the monitoring check (300 seconds by default)|
+|httpUsername|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
+|httpPassword|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
+|httpAuthType|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, one of: BASIC_AUTH,DIGEST|
+|httpMethod|string|The HTTP method to be used, one of: HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS|
+|postType|string|The format of data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
+|postContentType|string|The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: TEXT_HTML,APPLICATION_JSON|
+|postValue|object|The data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
+|customHttpHeaders|object|Custom HTTP headers to be sent along monitor request, formatted as JSON|
+|customHttpStatuses|string|Allows to define HTTP status codes that will be handled as up or down, e.g. 404:0_200:1 to accept 404 as down and 200 as up|
+|ignoreSslErrors|boolean|Flag to ignore SSL certificate related issues|
+|alertContacts|string|Alert contacts to be notified when monitor goes up or down. For syntax check https://uptimerobot.com/api/#newMonitorWrap|
+|mwindows|string|Maintenance window IDs for this monitor|
+
+### Ingress
+
+For Ingress resources the same parameters are supported. You pass them through annotations attached to your Ingress with the prefix `uroperator.brennerm.github.io/monitor.`.
+See below for an example.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+  annotations:
+    uroperator.brennerm.github.io/monitor.type: HTTPS
+    uroperator.brennerm.github.io/monitor.interval: "600"
+    uroperator.brennerm.github.io/monitor.httpUsername: foo
+    uroperator.brennerm.github.io/monitor.httpPassword: s3cr3t
+    uroperator.brennerm.github.io/monitor.httpAuthType: BASIC_AUTH
+spec:
+  rules:
+...
+```
+
 ## Planned features
 
 - provide a Helm chart to ease deployment :heavy_check_mark:
