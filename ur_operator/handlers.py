@@ -212,7 +212,6 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         kopf.adopt(monitor_body)
 
         if index >= previous_rule_count:  # at first update existing UptimeRobotMonitors, we currently don't check if there's actually a change
-            print(monitor_body)
             k8s.create_k8s_ur_monitor_with_body(namespace, monitor_body)
             logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         else:  # then create new UptimeRobotMonitors
