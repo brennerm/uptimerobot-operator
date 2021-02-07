@@ -1,0 +1,13 @@
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: UptimeRobotMonitor
+metadata:
+  name: my-custom-monitor
+spec:
+  url: https://brennerm.github.io
+  type: HTTPS
+  interval: 600
+  httpAuthType: BASIC_AUTH
+  httpUsername: foo
+  httpPassword: s3cr3t
+
+

@@ -50,7 +50,9 @@ def init_uptimerobot_api(logger):
 
 
 def create_monitor(logger, **kwargs):
-    resp = uptime_robot.new_monitor(**kwargs)
+    resp = uptime_robot.new_monitor(
+        **{k:str(v) for k,v in kwargs.items()}
+        )
 
     if resp['stat'] == 'ok':
         identifier = resp['monitor']['id']
@@ -62,7 +64,10 @@ def create_monitor(logger, **kwargs):
 
 
 def update_monitor(logger, identifier, **kwargs):
-    resp = uptime_robot.edit_monitor(identifier, **kwargs)
+    resp = uptime_robot.edit_monitor(
+        identifier,
+        **{k:str(v) for k,v in kwargs.items()}
+        )
 
     if resp['stat'] == 'ok':
         identifier = resp['monitor']['id']
@@ -110,8 +115,9 @@ def get_identifier(status: dict):
 
 @kopf.on.startup()
 def startup(logger, **_):
-    if(config.DISABLE_INGRESS_HANDLING):
+    if config.DISABLE_INGRESS_HANDLING:
         logger.info('handling of Ingress resources has been disabled')
+
     global k8s
     k8s = K8s()
     init_uptimerobot_api(logger)
@@ -129,34 +135,54 @@ def on_create(name: str, spec: dict, logger, **_):
 
 
 @kopf.on.create('networking.k8s.io', 'v1', 'ingresses')
-def on_ingress_create(name: str, namespace: str, spec: dict, logger, **_):
+def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, logger, **_):
     if config.DISABLE_INGRESS_HANDLING:
         logger.info('handling of Ingress resources has been disabled')
         return
+
+    monitor_prefix = f'{crds.GROUP}/monitor.'
+    monitor_spec = {k.replace(monitor_prefix, ''): v for k, v in annotations.items() if k.startswith(monitor_prefix)}
 
     index = 0
     for rule in spec['rules']:
         if 'host' not in rule:
             continue
 
-        url = rule['host']
+        if rule['host'].startswith('*'):  # filter out wildcard domains
+            continue
+
+        host = rule['host']
+
+        # we default to a ping check
+        if 'type' not in monitor_spec:
+            monitor_spec['type'] = crds.MonitorType.PING.name
+
+        if monitor_spec['type'] == 'HTTP':
+            monitor_spec['url'] = f"http://{host}"
+        elif monitor_spec['type'] == 'HTTPS':
+            monitor_spec['url'] = f"https://{host}"
+        else:
+            monitor_spec['url'] = host
 
         monitor_body = K8s.construct_k8s_ur_monitor_body(
-            namespace, name=f"{name}-{index}", url=url, type=crds.MonitorType.PING.name)
+            namespace, name=f"{name}-{index}", **crds.MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
         k8s.create_k8s_ur_monitor_with_body(namespace, monitor_body)
-        logger.info(f'created new UptimeRobotMonitor object for URL {url}')
+        logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         index += 1
 
 
 @kopf.on.update('networking.k8s.io', 'v1', 'ingresses')
-def on_ingress_update(name: str, namespace: str, spec: dict, diff: list, logger, **_):
+def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, old: dict, logger, **_):
     if config.DISABLE_INGRESS_HANDLING:
         logger.info('handling of Ingress resources has been disabled')
         return
 
-    previous_rule_count = len(diff[0][2])
+    monitor_prefix = f'{crds.GROUP}/monitor.'
+    monitor_spec = {k.replace(monitor_prefix, ''): v for k, v in annotations.items() if k.startswith(monitor_prefix)}
+
+    previous_rule_count = len(old['spec']['rules'])
     index = 0
 
     for rule in spec['rules']:
@@ -166,19 +192,32 @@ def on_ingress_update(name: str, namespace: str, spec: dict, diff: list, logger,
         if rule['host'].startswith('*'):  # filter out wildcard domains
             continue
 
+        host = rule['host']
+
+        # we default to a ping check
+        if 'type' not in monitor_spec:
+            monitor_spec['type'] = crds.MonitorType.PING.name
+
+        if monitor_spec['type'] == 'HTTP':
+            monitor_spec['url'] = f"http://{host}"
+        elif monitor_spec['type'] == 'HTTPS':
+            monitor_spec['url'] = f"https://{host}"
+        else:
+            monitor_spec['url'] = host
+
         monitor_name = f"{name}-{index}"
-        url = rule['host']
 
         monitor_body = K8s.construct_k8s_ur_monitor_body(
-            namespace, name=monitor_name, url=url, type=crds.MonitorType.PING.name)
+            namespace, name=monitor_name, **crds.MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
         if index >= previous_rule_count:  # at first update existing UptimeRobotMonitors, we currently don't check if there's actually a change
+            print(monitor_body)
             k8s.create_k8s_ur_monitor_with_body(namespace, monitor_body)
-            logger.info(f'created new UptimeRobotMonitor object for URL {url}')
+            logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         else:  # then create new UptimeRobotMonitors
             k8s.update_k8s_ur_monitor_with_body(namespace, monitor_name, monitor_body)
-            logger.info(f'updated UptimeRobotMonitor object for URL {url}')
+            logger.info(f'updated UptimeRobotMonitor object for URL {host}')
 
         index += 1
 

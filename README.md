@@ -13,14 +13,20 @@ After installing the uptimerobot-operator it'll watch for Ingress resources in y
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: my-example-ingress
+  name: my-ingress
+  annotations:
+    uroperator.brennerm.github.io/monitor.type: HTTPS
+    uroperator.brennerm.github.io/monitor.interval: "600"
+    uroperator.brennerm.github.io/monitor.httpUsername: foo
+    uroperator.brennerm.github.io/monitor.httpPassword: s3cr3t
+    uroperator.brennerm.github.io/monitor.httpAuthType: BASIC_AUTH
 spec:
   rules:
-  - host: "foo.com"
+  - host: brennerm.github.io
     http:
       paths:
       - pathType: Prefix
-        path: "/bar"
+        path: "/"
         backend:
           service:
             name: service1
@@ -28,7 +34,7 @@ spec:
               number: 80
 ```
 
-a new monitor for the URL *foo.com* is automatically being created in your UptimeRobot account.
+a new monitor for the URL *https://brennerm.github.io* is automatically being created in your UptimeRobot account.
 
 Additionally you can create custom monitors using the UptimeRobotMonitor resource.
 
@@ -38,8 +44,8 @@ kind: UptimeRobotMonitor
 metadata:
   name: my-custom-monitor
 spec:
-  url: "bar.com"
-  type: HTTP_HTTPS
+  url: "https://brennerm.github.io"
+  type: HTTPS
   interval: 600
   httpAuthType: BASIC_AUTH
   httpUsername: foo
@@ -57,7 +63,7 @@ spec:
 
 ### Deploying to Kubernetes using Helm
 
-1. Add the uptimerobot-operator uptimerobot-operato chart repo `helm repo add uptimerobot-operator https://brennerm.github.io/uptimerobot-operator/helm`
+1. Add the uptimerobot-operator chart repo `helm repo add uptimerobot-operator https://brennerm.github.io/uptimerobot-operator/helm`
 2. Deploy the Helm chart `helm upgrade --install uptimerobot-operator uptimerobot-operator --set uptimeRobotApiKey=$MY_UPTIMEROBOT_API_KEY`
 
 Have a look at the [values file](helm/uptimerobot-operator/values.yaml) if you want to customize the deployment.
