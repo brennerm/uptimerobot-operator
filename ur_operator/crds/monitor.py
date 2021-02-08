@@ -2,15 +2,11 @@
 
 import enum
 import json
-import re
 
 import kubernetes.client as k8s_client
 
 from .constants import GROUP
-
-
-pattern = re.compile(r'(?<!^)(?=[A-Z])')
-def camel_to_snake_case(string): return pattern.sub('_', string).lower()
+from .utils import camel_to_snake_case
 
 
 class MonitorType(enum.Enum):

@@ -135,6 +135,22 @@ spec:
 ...
 ```
 
+To disable ingress handling completely pass the environment variable `URO_DISABLE_INGRESS_HANDLING=1` to the operator.
+
+### Public Status Pages
+
+The PublicStatusPage resource supports all current parameters for status pages that UptimeRobot offers. Below you can find a list that contains all of them.
+
+|key|type|description|
+|-|-|-|
+|`monitors` (required)|`string`|the list of monitor IDs to be displayed in status page (the values are seperated with "-" or 0 for all monitors)|
+|`friendlyName`|`string`|Friendly name of public status page, defaults to name of PublicStatusPage object|
+|`customDomain`|`string`|the domain or subdomain that the status page will run on|
+|`password`|`string`|the password for the status page|
+|`sort`|`string`|the sorting of the monitors on the status page, one of: FRIENDLY_NAME_A_Z,FRIENDLY_NAME_Z_A,STATUS_UP_DOWN_PAUSED,STATUS_DOWN_UP_PAUSED|
+|`status`|`string`|the status of the status page, one of: PAUSED,ACTIVE|
+|`hideUrlLinks`|`boolean`|Flag to remove the UptimeRobot link from the status page (pro plan feature)|
+
 ## Planned features
 
 - provide a Helm chart to ease deployment :heavy_check_mark:
