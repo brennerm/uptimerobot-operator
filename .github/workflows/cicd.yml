@@ -33,7 +33,7 @@ jobs:
       - name: Execute E2E tests
         env:
           UPTIMEROBOT_API_KEY: ${{ secrets.UPTIMEROBOT_API_KEY }}
-        run: pipenv run pytest tests/test_e2e.py
+        run: pipenv run pytest tests/test_e2e*.py
 
   build_docker_image:
     runs-on: ubuntu-latest
