@@ -84,10 +84,6 @@ class MonitorV1Beta1:
     required_props = ['url', 'type']
 
     spec_properties = {
-        'friendlyName': k8s_client.V1JSONSchemaProps(
-            type='string',
-            description='Friendly name of monitor, defaults to name of UptimeRobotMonitor object'
-        ),
         'url': k8s_client.V1JSONSchemaProps(
             type='string',
             description='URL that will be monitored'
@@ -97,6 +93,10 @@ class MonitorV1Beta1:
             enum=list(
                 MonitorType.__members__.keys()),
             description=f'Type of monitor, one of: {",".join(list(MonitorType.__members__.keys()))}'
+        ),
+        'friendlyName': k8s_client.V1JSONSchemaProps(
+            type='string',
+            description='Friendly name of monitor, defaults to name of UptimeRobotMonitor object'
         ),
         'subType': k8s_client.V1JSONSchemaProps(
             type='string',

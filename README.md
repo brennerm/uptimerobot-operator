@@ -93,26 +93,26 @@ The UptimeRobotMonitor resource supports all current parameters for monitors tha
 
 |key|type|description|
 |-|-|-|
-|friendlyName|string|Friendly name of monitor, defaults to name of UptimeRobotMonitor object|
-|url (required)|string|URL that will be monitored|
-|type (required)|string|Type of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
-|subType|string|Subtype of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
-|port|integer|Port to monitor when using monitor sub type PORT|
-|keywordType|string|Keyword type when using monitor type KEYWORD, one of: EXISTS,NOT_EXISTS|
-|keywordValue|string|Keyword value when using monitor type KEYWORD|
-|interval|integer|The interval for the monitoring check (300 seconds by default)|
-|httpUsername|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
-|httpPassword|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
-|httpAuthType|string|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, one of: BASIC_AUTH,DIGEST|
-|httpMethod|string|The HTTP method to be used, one of: HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS|
-|postType|string|The format of data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
-|postContentType|string|The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: TEXT_HTML,APPLICATION_JSON|
-|postValue|object|The data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
-|customHttpHeaders|object|Custom HTTP headers to be sent along monitor request, formatted as JSON|
-|customHttpStatuses|string|Allows to define HTTP status codes that will be handled as up or down, e.g. 404:0_200:1 to accept 404 as down and 200 as up|
-|ignoreSslErrors|boolean|Flag to ignore SSL certificate related issues|
-|alertContacts|string|Alert contacts to be notified when monitor goes up or down. For syntax check https://uptimerobot.com/api/#newMonitorWrap|
-|mwindows|string|Maintenance window IDs for this monitor|
+|`url` (required)|`string`|URL that will be monitored|
+|`type` (required)|`string`|Type of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
+|`friendlyName`|`string`|Friendly name of monitor, defaults to name of UptimeRobotMonitor object|
+|`subType`|`string`|Subtype of monitor, one of: HTTP,HTTPS,KEYWORD,PING,PORT,HEARTBEAT|
+|`port`|`integer`|Port to monitor when using monitor sub type PORT|
+|`keywordType`|`string`|Keyword type when using monitor type KEYWORD, one of: EXISTS,NOT_EXISTS|
+|`keywordValue`|`string`|Keyword value when using monitor type KEYWORD|
+|`interval`|`integer`|The interval for the monitoring check (300 seconds by default)|
+|`httpUsername`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
+|`httpPassword`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
+|`httpAuthType`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, one of: BASIC_AUTH,DIGEST|
+|`httpMethod`|`string`|The HTTP method to be used, one of: HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS|
+|`postType`|`string`|The format of data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
+|`postContentType`|`string`|The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: TEXT_HTML,APPLICATION_JSON|
+|`postValue`|`object`|The data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
+|`customHttpHeaders`|`object`|Custom HTTP headers to be sent along monitor request, formatted as JSON|
+|`customHttpStatuses`|`string`|Allows to define HTTP status codes that will be handled as up or down, e.g. 404:0_200:1 to accept 404 as down and 200 as up|
+|`ignoreSslErrors`|`boolean`|Flag to ignore SSL certificate related issues|
+|`alertContacts`|`string`|Alert contacts to be notified when monitor goes up or down. For syntax check https://uptimerobot.com/api/#newMonitorWrap|
+|`mwindows`|`string`|Maintenance window IDs for this monitor|
 
 ### Ingress
 
