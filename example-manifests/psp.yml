@@ -1,0 +1,7 @@
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: PublicStatusPage
+metadata:
+  name: my-public-status-page
+spec:
+  monitors: "0" # will include all monitors
+  password: "s3cr3t"

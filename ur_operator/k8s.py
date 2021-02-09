@@ -35,38 +35,40 @@ class K8s:
             'spec': spec
         }
 
-    def create_k8s_ur_monitor_with_body(self, namespace, body):
+    def create_k8s_crd_obj_with_body(self, crd, namespace, body):
         return self.custom_objects_api.create_namespaced_custom_object(
             group=crds.GROUP,
-            version=crds.MonitorV1Beta1.version,
+            version=crd.version,
             namespace=namespace,
-            plural=crds.MonitorV1Beta1.plural,
+            plural=crd.plural,
             body=body
         )
 
-    def update_k8s_ur_monitor_with_body(self, namespace, name, body):
+    def update_k8s_crd_obj_with_body(self, crd, namespace, name, body):
         return self.custom_objects_api.patch_namespaced_custom_object(
             group=crds.GROUP,
-            version=crds.MonitorV1Beta1.version,
-            plural=crds.MonitorV1Beta1.plural,
+            version=crd.version,
+            plural=crd.plural,
             namespace=namespace,
             name=name,
             body=body
         )
 
-    def create_k8s_ur_monitor(self, namespace, name, **spec):
-        return self.create_k8s_ur_monitor_with_body(
+    def create_k8s_crd_obj(self, crd, namespace, name, **spec):
+        return self.create_k8s_crd_obj_with_body(
+            crd,
             namespace,
             {
-                'apiVersion': f'{crds.GROUP}/{crds.MonitorV1Beta1.version}',
-                'kind': crds.MonitorV1Beta1.kind,
+                'apiVersion': f'{crds.GROUP}/{crd.version}',
+                'kind': crd.kind,
                 'metadata': {'name': name, 'namespace': namespace},
                 'spec': spec
             }
         )
 
-    def update_k8s_ur_monitor(self, namespace, name, **spec):
-        return self.update_k8s_ur_monitor_with_body(
+    def update_k8s_crd_obj(self, crd, namespace, name, **spec):
+        return self.update_k8s_crd_obj_with_body(
+            crd,
             namespace,
             name,
             {
@@ -74,11 +76,11 @@ class K8s:
             }
         )
 
-    def delete_k8s_ur_monitor(self, namespace, name):
+    def delete_k8s_crd_obj(self, crd, namespace, name):
         self.custom_objects_api.delete_namespaced_custom_object(
             group=crds.GROUP,
-            version=crds.MonitorV1Beta1.version,
-            plural=crds.MonitorV1Beta1.plural,
+            version=crd.version,
+            plural=crd.plural,
             namespace=namespace,
             name=name,
         )

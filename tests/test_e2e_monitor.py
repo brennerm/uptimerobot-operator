@@ -23,17 +23,17 @@ uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_monitor(namespace, name, wait_for_seconds=1, **spec):
-    k8s.create_k8s_ur_monitor(namespace, name, **spec)
+    k8s.create_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def update_k8s_ur_monitor(namespace, name, wait_for_seconds=1, **spec):
-    k8s.update_k8s_ur_monitor(namespace, name, **spec)
+    k8s.update_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def delete_k8s_ur_monitor(namespace, name, wait_for_seconds=1):
-    k8s.delete_k8s_ur_monitor(namespace, name)
+    k8s.delete_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
 

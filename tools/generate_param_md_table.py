@@ -6,8 +6,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 import ur_operator.crds as crds
 
-print('|key|type|description|')
-print('|-|-|-|')
+for crd in [crds.MonitorV1Beta1, crds.PspV1Beta1]:
+    print('|key|type|description|')
+    print('|-|-|-|')
 
-for key, prop in crds.MonitorV1Beta1.spec_properties.items():
-    print(f'|`{key}`{" (required)" if key in crds.MonitorV1Beta1.required_props else ""}|`{prop.type}`|{prop.description}|')
+    for key, prop in crd.spec_properties.items():
+        print(f'|`{key}`{" (required)" if key in crd.required_props else ""}|`{prop.type}`|{prop.description}|')
+    print()

@@ -10,6 +10,7 @@ import uptimerobot
 from config import Config
 
 MONITOR_ID_KEY = 'monitor_id'
+PSP_ID_KEY = 'psp_id'
 
 config = Config()
 uptime_robot = None
@@ -27,17 +28,18 @@ def create_crds(logger):
         k8s_config.load_incluster_config()
 
     api_instance = k8s_client.ApiextensionsV1Api()
-    try:
-        api_instance.create_custom_resource_definition(crds.MonitorV1Beta1.crd)
-        logger.info('CRDs successfully created')
-    except k8s_client.rest.ApiException as error:
-        if error.status == 409:
-            api_instance.patch_custom_resource_definition(
-                name=crds.MonitorV1Beta1.crd.metadata.name, body=crds.MonitorV1Beta1.crd)
-            logger.debug('CRDs successfully patched')
-        else:
-            logger.error('CRD creation failed')
-            raise error
+    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd]:
+        try:
+            api_instance.create_custom_resource_definition(crd)
+            logger.info(f'CRD {crd.metadata.name} successfully created')
+        except k8s_client.rest.ApiException as error:
+            if error.status == 409:
+                api_instance.patch_custom_resource_definition(
+                    name=crd.metadata.name, body=crd)
+                logger.debug(f'CRD {crd.metadata.name} successfully patched')
+            else:
+                logger.error(f'CRD {crd.metadata.name} failed to create')
+                raise error
 
 
 def init_uptimerobot_api(logger):
@@ -92,6 +94,50 @@ def delete_monitor(logger, identifier):
         raise kopf.PermanentError(
             f'failed to delete monitor with ID {identifier}: {resp["error"]}')
 
+def create_psp(logger, **kwargs):
+    resp = uptime_robot.new_psp(
+        type='1',
+        **{k:str(v) for k,v in kwargs.items()}
+        )
+
+    if resp['stat'] == 'ok':
+        identifier = resp['psp']['id']
+        logger.info(
+            f'PSP with ID {identifier} has been created successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to create PSP: {resp["error"]}')
+
+
+def update_psp(logger, identifier, **kwargs):
+    resp = uptime_robot.edit_psp(
+        identifier,
+        **{k:str(v) for k,v in kwargs.items()}
+        )
+
+    if resp['stat'] == 'ok':
+        identifier = resp['psp']['id']
+        logger.info(
+            f'PSP with ID {identifier} has been updated successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to update PSP with ID {identifier}: {resp["error"]}')
+
+
+def delete_psp(logger, identifier):
+    resp = uptime_robot.delete_psp(identifier)
+    if resp['stat'] == 'ok':
+        logger.info(
+            f'PSP with ID {identifier} has been deleted successfully')
+    else:
+        if resp['error']['type'] == 'not_found':
+            logger.info(
+                f'PSP with ID {identifier} has already been deleted')
+            return
+
+        raise kopf.PermanentError(
+            f'failed to delete PSP with ID {identifier}: {resp["error"]}')
+
 
 def monitor_type_changed(diff: list):
     try:
@@ -112,6 +158,14 @@ def get_identifier(status: dict):
 
     raise KeyError(MONITOR_ID_KEY)
 
+def get_psp_identifier(status: dict):
+    if on_psp_update.__name__ in status:
+        return status[on_psp_update.__name__][PSP_ID_KEY]
+
+    if on_psp_create.__name__ in status:
+        return status[on_psp_create.__name__][PSP_ID_KEY]
+
+    raise KeyError(PSP_ID_KEY)
 
 @kopf.on.startup()
 def startup(logger, **_):
@@ -168,7 +222,7 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
             namespace, name=f"{name}-{index}", **crds.MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
-        k8s.create_k8s_ur_monitor_with_body(namespace, monitor_body)
+        k8s.create_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_body)
         logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         index += 1
 
@@ -212,16 +266,16 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         kopf.adopt(monitor_body)
 
         if index >= previous_rule_count:  # at first update existing UptimeRobotMonitors, we currently don't check if there's actually a change
-            k8s.create_k8s_ur_monitor_with_body(namespace, monitor_body)
+            k8s.create_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_body)
             logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         else:  # then create new UptimeRobotMonitors
-            k8s.update_k8s_ur_monitor_with_body(namespace, monitor_name, monitor_body)
+            k8s.update_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_name, monitor_body)
             logger.info(f'updated UptimeRobotMonitor object for URL {host}')
 
         index += 1
 
     while index < previous_rule_count:  # make sure to clean up remaining UptimeRobotMonitors
-        k8s.delete_k8s_ur_monitor(namespace, f"{name}-{index}")
+        k8s.delete_k8s_crd_obj(crds.MonitorV1Beta1, namespace, f"{name}-{index}")
         logger.info('deleted obsolete UptimeRobotMonitor object')
         index += 1
 
@@ -263,3 +317,39 @@ def on_delete(status: dict, logger, **_):
             "was not able to determine the monitor ID for deletion") from error
     except Exception as error:
         raise kopf.PermanentError(f"deleting monitor failed: {error}") from error
+
+@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
+def on_psp_create(name: str, spec: dict, logger, **_):
+    identifier = create_psp(
+        logger,
+        **crds.PspV1Beta1.spec_to_request_dict(name, spec)
+    )
+
+    return {PSP_ID_KEY: identifier}
+
+@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
+def on_psp_update(name: str, spec: dict, status: dict, logger, **_):
+    try:
+        identifier = get_psp_identifier(status)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the PSP ID for update") from error
+
+    identifier = update_psp(
+        logger,
+        identifier,
+        **crds.PspV1Beta1.spec_to_request_dict(name, spec)
+    )
+
+    return {PSP_ID_KEY: identifier}
+
+@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
+def on_psp_delete(status: dict, logger, **_):
+    try:  # making sure to catch all exceptions here to prevent blocking deletion
+        identifier = get_psp_identifier(status)
+        delete_psp(logger, identifier)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the PSP ID for deletion") from error
+    except Exception as error:
+        raise kopf.PermanentError(f"deleting PSP failed: {error}") from error
