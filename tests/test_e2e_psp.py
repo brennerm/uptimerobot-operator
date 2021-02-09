@@ -41,13 +41,16 @@ class TestDefaultOperator:
     def test_create_psp(self, namespace_handling, kopf_runner):
         name = 'foo'
         monitors = '0'
+        password = 's3cr3t'
+        sort = crds.PspSort.STATUS_DOWN_UP_PAUSED
 
-        create_k8s_ur_psp(NAMESPACE, name, monitors=monitors)
+        create_k8s_ur_psp(NAMESPACE, name, monitors=monitors, password=password, sort=sort.name)
 
         psps = uptime_robot.get_psp()['psps']
         assert len(psps) == 1
         assert psps[0]['friendly_name'] == name
         assert psps[0]['monitors'] == 0
+        assert psps[0]['sort'] == sort.value
 
     def test_create_psp_with_friendly_name(self, namespace_handling, kopf_runner):
         name = 'foo'

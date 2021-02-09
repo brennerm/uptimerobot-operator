@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- introducing the PublicStatusPage resource to setup UptimeRobot status pages [#15](https://github.com/brennerm/uptimerobot-operator/pull/15)
+
 ## [v0.2.0] - 2021-02-08
 
 ### Added

@@ -31,12 +31,12 @@ def create_crds(logger):
     for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd]:
         try:
             api_instance.create_custom_resource_definition(crd)
-            logger.info(f'CRDs {crd.metadata.name} successfully created')
+            logger.info(f'CRD {crd.metadata.name} successfully created')
         except k8s_client.rest.ApiException as error:
             if error.status == 409:
                 api_instance.patch_custom_resource_definition(
                     name=crd.metadata.name, body=crd)
-                logger.debug(f'CRDs {crd.metadata.name} successfully patched')
+                logger.debug(f'CRD {crd.metadata.name} successfully patched')
             else:
                 logger.error(f'CRD {crd.metadata.name} failed to create')
                 raise error

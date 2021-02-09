@@ -53,6 +53,8 @@ spec:
 
 ```
 
+The operator also supports creating public status pages. See below for details.
+
 ## Installation
 
 ### Create an UptimeRobot API key
@@ -151,6 +153,16 @@ The PublicStatusPage resource supports all current parameters for status pages t
 |`status`|`string`|the status of the status page, one of: PAUSED,ACTIVE|
 |`hideUrlLinks`|`boolean`|Flag to remove the UptimeRobot link from the status page (pro plan feature)|
 
+```yaml
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: PublicStatusPage
+metadata:
+  name: my-public-status-page
+spec:
+  monitors: "0" # will include all monitors
+  password: "s3cr3t"
+```
+
 ## Planned features
 
 - provide a Helm chart to ease deployment :heavy_check_mark:
@@ -158,6 +170,6 @@ The PublicStatusPage resource supports all current parameters for status pages t
 - add support for creating Uptime Robot
   - alert contacts,
   - maintenance windows
-  - public status pages using Kubernetes resources
+  - public status pages using Kubernetes resources :heavy_check_mark:
 - implement automatic detection of HTTP path of Ingress resources
 - add an integration for external-dns to support creating monitors for Service resources
