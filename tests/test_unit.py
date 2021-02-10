@@ -7,16 +7,16 @@ import pytest
 import ur_operator.handlers as handlers
 
 def test_monitor_type_changed_changed_type():
-    assert handlers.monitor_type_changed([['change', ['spec', 'type']]])
+    assert handlers.type_changed([['change', ['spec', 'type']]])
 
 
 def test_monitor_type_changed_changed_name():
-    assert not handlers.monitor_type_changed(
+    assert not handlers.type_changed(
         [['change', ['spec', 'friendlyName']]])
 
 
 def test_monitor_type_changed_added():
-    assert not handlers.monitor_type_changed(
+    assert not handlers.type_changed(
         [['add', ['spec', 'friendlyName']]])
 
 

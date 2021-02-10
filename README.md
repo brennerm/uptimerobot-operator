@@ -163,6 +163,29 @@ spec:
   password: "s3cr3t"
 ```
 
+### Maintenance Windows
+
+The MaintenanceWindow resource supports all current parameters for maintenance windows that UptimeRobot offers. Below you can find a list that contains all of them.
+
+|key|type|description|
+|-|-|-|
+|`type` (required)|`string`|the type of maintenance window, one of: ONCE,DAILY,WEEKLY,MONTHLY|
+|`startTime` (required)|`string`|the start time of the maintenance window, in seconds since epoch for type MaintenanceWindowType.ONCE, in HH:mm format for the other types|
+|`duration` (required)|`number`|the number of seconds the maintenance window will be active|
+|`friendlyName`|`string`|friendly name of the maintenance window, defaults to name of the MaintenanceWindow object|
+|`value`|`string`|allows to specify the maintenance window selection, e.g. 2-4-5 for Tuesday-Thursday-Friday or 10-17-26 for the days of the month, only valid and required for MaintenanceWindowType.WEEKLY and MaintenanceWindowType.MONTHLY|
+
+```yaml
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: MaintenanceWindow
+metadata:
+  name: my-maintenance-window
+spec:
+  type: DAILY
+  startTime: "10:00"
+  duration: 30
+```
+
 ## Planned features
 
 - provide a Helm chart to ease deployment :heavy_check_mark:

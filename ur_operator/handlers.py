@@ -11,6 +11,7 @@ from config import Config
 
 MONITOR_ID_KEY = 'monitor_id'
 PSP_ID_KEY = 'psp_id'
+MW_ID_KEY = 'mw_id'
 
 config = Config()
 uptime_robot = None
@@ -28,7 +29,7 @@ def create_crds(logger):
         k8s_config.load_incluster_config()
 
     api_instance = k8s_client.ApiextensionsV1Api()
-    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd]:
+    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd, crds.MaintenanceWindowV1Beta1.crd]:
         try:
             api_instance.create_custom_resource_definition(crd)
             logger.info(f'CRD {crd.metadata.name} successfully created')
@@ -138,8 +139,50 @@ def delete_psp(logger, identifier):
         raise kopf.PermanentError(
             f'failed to delete PSP with ID {identifier}: {resp["error"]}')
 
+def create_mw(logger, **kwargs):
+    resp = uptime_robot.new_m_window(
+        **{k:str(v) for k,v in kwargs.items()}
+        )
 
-def monitor_type_changed(diff: list):
+    if resp['stat'] == 'ok':
+        identifier = resp['mwindow']['id']
+        logger.info(
+            f'MW with ID {identifier} has been created successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to create MW: {resp["error"]}')
+
+
+def update_mw(logger, identifier, **kwargs):
+    resp = uptime_robot.edit_m_window(
+        identifier,
+        **{k:str(v) for k,v in kwargs.items()}
+        )
+
+    if resp['stat'] == 'ok':
+        identifier = resp['mwindow']['id']
+        logger.info(
+            f'MW with ID {identifier} has been updated successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to update MW with ID {identifier}: {resp["error"]}')
+
+
+def delete_mw(logger, identifier):
+    resp = uptime_robot.delete_m_window(identifier)
+    if resp['stat'] == 'ok':
+        logger.info(
+            f'MW with ID {identifier} has been deleted successfully')
+    else:
+        if resp['error']['type'] == 'not_found':
+            logger.info(
+                f'MW with ID {identifier} has already been deleted')
+            return
+
+        raise kopf.PermanentError(
+            f'failed to delete MW with ID {identifier}: {resp["error"]}')
+
+def type_changed(diff: list):
     try:
         for entry in diff:
             if entry[0] == 'change' and entry[1][1] == 'type':
@@ -149,6 +192,7 @@ def monitor_type_changed(diff: list):
     return False
 
 
+# TODO merge get_identifier functions
 def get_identifier(status: dict):
     if on_update.__name__ in status:
         return status[on_update.__name__][MONITOR_ID_KEY]
@@ -167,6 +211,15 @@ def get_psp_identifier(status: dict):
 
     raise KeyError(PSP_ID_KEY)
 
+def get_mw_identifier(status: dict):
+    if on_mw_update.__name__ in status:
+        return status[on_mw_update.__name__][MW_ID_KEY]
+
+    if on_mw_create.__name__ in status:
+        return status[on_mw_create.__name__][MW_ID_KEY]
+
+    raise KeyError(MW_ID_KEY)
+
 @kopf.on.startup()
 def startup(logger, **_):
     if config.DISABLE_INGRESS_HANDLING:
@@ -177,21 +230,10 @@ def startup(logger, **_):
     init_uptimerobot_api(logger)
     create_crds(logger)
 
-
-@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
-def on_create(name: str, spec: dict, logger, **_):
-    identifier = create_monitor(
-        logger,
-        **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
-    )
-
-    return {MONITOR_ID_KEY: identifier}
-
-
 @kopf.on.create('networking.k8s.io', 'v1', 'ingresses')
 def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, logger, **_):
     if config.DISABLE_INGRESS_HANDLING:
-        logger.info('handling of Ingress resources has been disabled')
+        logger.debug('handling of Ingress resources has been disabled')
         return
 
     monitor_prefix = f'{crds.GROUP}/monitor.'
@@ -230,7 +272,7 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
 @kopf.on.update('networking.k8s.io', 'v1', 'ingresses')
 def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, old: dict, logger, **_):
     if config.DISABLE_INGRESS_HANDLING:
-        logger.info('handling of Ingress resources has been disabled')
+        logger.debug('handling of Ingress resources has been disabled')
         return
 
     monitor_prefix = f'{crds.GROUP}/monitor.'
@@ -279,6 +321,14 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         logger.info('deleted obsolete UptimeRobotMonitor object')
         index += 1
 
+@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
+def on_create(name: str, spec: dict, logger, **_):
+    identifier = create_monitor(
+        logger,
+        **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
+    )
+
+    return {MONITOR_ID_KEY: identifier}
 
 @kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
 def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
@@ -288,7 +338,7 @@ def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
         raise kopf.PermanentError(
             "was not able to determine the monitor ID for update") from error
 
-    if monitor_type_changed(diff):
+    if type_changed(diff):
         logger.info('monitor type changed, need to delete and recreate')
         delete_monitor(logger, identifier)
 
@@ -296,7 +346,6 @@ def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
             logger,
             **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
         )
-
     else:
         identifier = update_monitor(
             logger,
@@ -353,3 +402,52 @@ def on_psp_delete(status: dict, logger, **_):
             "was not able to determine the PSP ID for deletion") from error
     except Exception as error:
         raise kopf.PermanentError(f"deleting PSP failed: {error}") from error
+
+@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+def on_mw_create(name: str, spec: dict, logger, **_):
+    identifier = create_mw(
+        logger,
+        **crds.MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
+    )
+
+    return {MW_ID_KEY: identifier}
+
+@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+def on_mw_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
+    try:
+        identifier = get_mw_identifier(status)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the MW ID for update") from error
+
+    update_payload = crds.MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
+
+    if type_changed(diff):
+        logger.info('maintenance window type changed, need to delete and recreate')
+        delete_mw(logger, identifier)
+
+        identifier = create_mw(
+            logger,
+            **update_payload
+        )
+    else:
+        update_payload.pop('type', None) # update does not accept type parameter
+
+        identifier = update_mw(
+            logger,
+            identifier,
+            **update_payload
+        )
+
+    return {MW_ID_KEY: identifier}
+
+@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+def on_mw_delete(status: dict, logger, **_):
+    try:  # making sure to catch all exceptions here to prevent blocking deletion
+        identifier = get_mw_identifier(status)
+        delete_mw(logger, identifier)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the MW ID for deletion") from error
+    except Exception as error:
+        raise kopf.PermanentError(f"deleting MW failed: {error}") from error
