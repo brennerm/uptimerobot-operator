@@ -1,0 +1,8 @@
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: MaintenanceWindow
+metadata:
+  name: my-maintenance-window
+spec:
+  type: DAILY
+  startTime: "10:00"
+  duration: 30
