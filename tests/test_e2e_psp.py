@@ -38,7 +38,7 @@ def delete_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
 
 
 class TestDefaultOperator:
-    def test_create_psp(self, namespace_handling, kopf_runner):
+    def test_create_psp(self, kopf_runner, namespace_handling):
         name = 'foo'
         monitors = '0'
         password = 's3cr3t'
@@ -52,7 +52,7 @@ class TestDefaultOperator:
         assert psps[0]['monitors'] == 0
         assert psps[0]['sort'] == sort.value
 
-    def test_create_psp_with_friendly_name(self, namespace_handling, kopf_runner):
+    def test_create_psp_with_friendly_name(self, kopf_runner, namespace_handling):
         name = 'foo'
         friendly_name = 'bar'
         monitors = '0'
@@ -65,7 +65,7 @@ class TestDefaultOperator:
         assert psps[0]['monitors'] == 0
 
     @pytest.mark.skip(reason='not able to test pro features')
-    def test_create_psp_with_hidden_url_links(self, namespace_handling, kopf_runner):
+    def test_create_psp_with_hidden_url_links(self, kopf_runner, namespace_handling):
         name = 'foo'
         monitors = '0'
         hiddenUrlLinks = True
@@ -78,7 +78,7 @@ class TestDefaultOperator:
         assert psps[0]['monitors'] == 0
         assert psps[0]['hidden_url_links'] == hiddenUrlLinks
 
-    def test_update_psp(self, namespace_handling, kopf_runner):
+    def test_update_psp(self, kopf_runner, namespace_handling):
         name = 'foo'
         new_name = 'bar'
         monitors = '0'
@@ -95,7 +95,7 @@ class TestDefaultOperator:
         assert len(psps) == 1
         assert psps[0]['friendly_name'] == new_name
 
-    def test_delete_psp(self, namespace_handling, kopf_runner):
+    def test_delete_psp(self, kopf_runner, namespace_handling):
         name = 'foo'
         monitors = '0'
 

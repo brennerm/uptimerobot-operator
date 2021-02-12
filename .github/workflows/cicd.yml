@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.8.5"
       - name: Install dependencies
         run: |
           pip install pipenv
@@ -33,7 +33,12 @@ jobs:
       - name: Execute E2E tests
         env:
           UPTIMEROBOT_API_KEY: ${{ secrets.UPTIMEROBOT_API_KEY }}
-        run: pipenv run pytest tests/test_e2e*.py
+        run: |
+          # for some reason tests fail when starting them with a single command
+          # that's why we are looping here
+          for test in tests/test_e2e*.py; do
+            pipenv run pytest $test
+          done
 
   build_docker_image:
     runs-on: ubuntu-latest

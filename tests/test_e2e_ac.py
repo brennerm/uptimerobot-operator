@@ -38,7 +38,7 @@ def delete_k8s_ur_ac(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
 
 
 class TestDefaultOperator:
-    def test_create_email_ac(self, namespace_handling, kopf_runner):
+    def test_create_email_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.EMAIL
         value = 'foo@bar.com'
@@ -53,7 +53,7 @@ class TestDefaultOperator:
 
 
     @pytest.mark.skip(reason='needs fixing')
-    def test_create_twitter_ac(self, namespace_handling, kopf_runner):
+    def test_create_twitter_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.TWITTER_DM
         value = '__brennerm'
@@ -66,7 +66,7 @@ class TestDefaultOperator:
         assert acs[1]['type'] == ac_type.value
         assert acs[1]['value'] == value
 
-    def test_create_webhook_ac(self, namespace_handling, kopf_runner):
+    def test_create_webhook_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.WEB_HOOK
         value = 'https://brennerm.github.io?'
@@ -79,7 +79,7 @@ class TestDefaultOperator:
         assert acs[1]['type'] == ac_type.value
         assert acs[1]['value'] == value
 
-    def test_create_mw_with_friendly_name(self, namespace_handling, kopf_runner):
+    def test_create_mw_with_friendly_name(self, kopf_runner, namespace_handling):
         name = 'foo'
         friendly_name = 'bar'
         ac_type = crds.AlertContactType.EMAIL
@@ -93,7 +93,7 @@ class TestDefaultOperator:
         assert acs[1]['type'] == ac_type.value
         assert acs[1]['value'] == value
 
-    def test_update_ac_change_mail(self, namespace_handling, kopf_runner):
+    def test_update_ac_change_mail(self, kopf_runner, namespace_handling):
         name = 'foo'
         new_name = 'bar'
         ac_type = crds.AlertContactType.EMAIL
@@ -114,7 +114,7 @@ class TestDefaultOperator:
         assert acs[1]['friendly_name'] == new_name
         assert acs[1]['value'] == new_value
 
-    def test_update_ac_change_webhook_url(self, namespace_handling, kopf_runner):
+    def test_update_ac_change_webhook_url(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.WEB_HOOK
         value = 'https://brennerm.github.io?'
@@ -132,7 +132,7 @@ class TestDefaultOperator:
         assert len(acs) == 2
         assert acs[1]['value'] == new_value
 
-    def test_update_ac_change_type(self, namespace_handling, kopf_runner):
+    def test_update_ac_change_type(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.EMAIL
         new_ac_type = crds.AlertContactType.WEB_HOOK
@@ -153,7 +153,7 @@ class TestDefaultOperator:
         assert acs[1]['type'] == new_ac_type.value
         assert acs[1]['value'] == new_value
 
-    def test_delete_ac(self, namespace_handling, kopf_runner):
+    def test_delete_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
         ac_type = crds.AlertContactType.EMAIL
         value = 'foo@bar.com'

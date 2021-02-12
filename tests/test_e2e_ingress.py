@@ -73,7 +73,7 @@ def delete_k8s_ingress(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
 
 
 class TestDefaultOperator:
-    def test_create_default_ingress(self, namespace_handling, kopf_runner):
+    def test_create_default_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
 
@@ -85,7 +85,7 @@ class TestDefaultOperator:
         assert monitors[0]['url'] == url
         assert monitors[0]['type'] == crds.MonitorType.PING.value
 
-    def test_create_http_ingress(self, namespace_handling, kopf_runner):
+    def test_create_http_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         monitor_type = crds.MonitorType.HTTP
@@ -98,7 +98,7 @@ class TestDefaultOperator:
         assert monitors[0]['url'] == f'http://{url}'
         assert monitors[0]['type'] == monitor_type.value
 
-    def test_create_https_ingress(self, namespace_handling, kopf_runner):
+    def test_create_https_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         monitor_type = crds.MonitorType.HTTPS
@@ -111,7 +111,7 @@ class TestDefaultOperator:
         assert monitors[0]['url'] == f'https://{url}'
         assert monitors[0]['type'] == monitor_type.value
 
-    def test_create_ingress_with_basic_auth(self, namespace_handling, kopf_runner):
+    def test_create_ingress_with_basic_auth(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         username = 'foo'
@@ -129,7 +129,7 @@ class TestDefaultOperator:
         assert monitors[0]['http_username'] == username
         assert monitors[0]['http_password'] == password
 
-    def test_create_ingress_with_digest(self, namespace_handling, kopf_runner):
+    def test_create_ingress_with_digest(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         username = 'foo'
@@ -147,7 +147,7 @@ class TestDefaultOperator:
         assert monitors[0]['http_username'] == username
         assert monitors[0]['http_password'] == password
 
-    def test_update_ingress_add_host(self, namespace_handling, kopf_runner):
+    def test_update_ingress_add_host(self, kopf_runner, namespace_handling):
         name = 'foo'
         url1 = 'foo.com'
         url2 = 'bar.com'
@@ -162,7 +162,7 @@ class TestDefaultOperator:
         monitors = uptime_robot.get_all_monitors()['monitors']
         assert len(monitors) == 2
 
-    def test_update_ingress_remove_host(self, namespace_handling, kopf_runner):
+    def test_update_ingress_remove_host(self, kopf_runner, namespace_handling):
         name = 'foo'
         url1 = 'foo.com'
         url2 = 'bar.com'
@@ -177,7 +177,7 @@ class TestDefaultOperator:
         monitors = uptime_robot.get_all_monitors()['monitors']
         assert len(monitors) == 1
 
-    def test_update_ingress_change_interval(self, namespace_handling, kopf_runner):
+    def test_update_ingress_change_interval(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         interval = 600
@@ -196,7 +196,7 @@ class TestDefaultOperator:
         assert len(monitors) == 1
         assert monitors[0]['interval'] == new_interval
 
-    def test_update_ingress_change_type(self, namespace_handling, kopf_runner):
+    def test_update_ingress_change_type(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
         monitor_type = crds.MonitorType.HTTP
@@ -215,7 +215,7 @@ class TestDefaultOperator:
         assert len(monitors) == 1
         assert monitors[0]['type'] == new_monitor_type.value
 
-    def test_delete_ingress(self, namespace_handling, kopf_runner):
+    def test_delete_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
 
@@ -231,7 +231,7 @@ class TestDefaultOperator:
 
 
 class TestOperatorWithoutIngressHandling:
-    def test_create_ingress(self, namespace_handling, kopf_runner_without_ingress_handling):
+    def test_create_ingress(self, kopf_runner_without_ingress_handling, namespace_handling):
         name = 'foo'
         url = 'foo.com'
 
@@ -240,7 +240,7 @@ class TestOperatorWithoutIngressHandling:
         monitors = uptime_robot.get_all_monitors()['monitors']
         assert len(monitors) == 0
 
-    def test_update_ingress_add_host(self, namespace_handling, kopf_runner_without_ingress_handling):
+    def test_update_ingress_add_host(self, kopf_runner_without_ingress_handling, namespace_handling):
         name = 'foo'
         url1 = 'foo.com'
         url2 = 'bar.com'
