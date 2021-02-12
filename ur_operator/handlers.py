@@ -12,6 +12,7 @@ from config import Config
 MONITOR_ID_KEY = 'monitor_id'
 PSP_ID_KEY = 'psp_id'
 MW_ID_KEY = 'mw_id'
+AC_ID_KEY = 'ac_id'
 
 config = Config()
 uptime_robot = None
@@ -29,7 +30,7 @@ def create_crds(logger):
         k8s_config.load_incluster_config()
 
     api_instance = k8s_client.ApiextensionsV1Api()
-    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd, crds.MaintenanceWindowV1Beta1.crd]:
+    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd, crds.MaintenanceWindowV1Beta1.crd, crds.AlertContactV1Beta1.crd]:
         try:
             api_instance.create_custom_resource_definition(crd)
             logger.info(f'CRD {crd.metadata.name} successfully created')
@@ -182,6 +183,49 @@ def delete_mw(logger, identifier):
         raise kopf.PermanentError(
             f'failed to delete MW with ID {identifier}: {resp["error"]}')
 
+def create_ac(logger, **kwargs):
+    resp = uptime_robot.new_alert_contact(
+        **{k:str(v) for k,v in kwargs.items()}
+        )
+
+    if resp['stat'] == 'ok':
+        identifier = resp['alertcontact']['id']
+        logger.info(
+            f'AC with ID {identifier} has been created successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to create AC: {resp["error"]}')
+
+
+def update_ac(logger, identifier, **kwargs):
+    resp = uptime_robot.edit_alert_contact(
+        str(identifier),
+        **{k:str(v) for k,v in kwargs.items()}
+        )
+
+    if resp['stat'] == 'ok':
+        identifier = resp['alert_contact']['id']
+        logger.info(
+            f'AC with ID {identifier} has been updated successfully')
+        return identifier
+
+    raise kopf.PermanentError(f'failed to update AC with ID {identifier}: {resp["error"]}')
+
+
+def delete_ac(logger, identifier):
+    resp = uptime_robot.delete_alert_contact(str(identifier))
+    if resp['stat'] == 'ok':
+        logger.info(
+            f'AC with ID {identifier} has been deleted successfully')
+    else:
+        if resp['error']['type'] == 'not_found':
+            logger.info(
+                f'AC with ID {identifier} has already been deleted')
+            return
+
+        raise kopf.PermanentError(
+            f'failed to delete AC with ID {identifier}: {resp["error"]}')
+
 def type_changed(diff: list):
     try:
         for entry in diff:
@@ -219,6 +263,15 @@ def get_mw_identifier(status: dict):
         return status[on_mw_create.__name__][MW_ID_KEY]
 
     raise KeyError(MW_ID_KEY)
+
+def get_ac_identifier(status: dict):
+    if on_ac_update.__name__ in status:
+        return status[on_ac_update.__name__][AC_ID_KEY]
+
+    if on_ac_create.__name__ in status:
+        return status[on_ac_create.__name__][AC_ID_KEY]
+
+    raise KeyError(AC_ID_KEY)
 
 @kopf.on.startup()
 def startup(logger, **_):
@@ -451,3 +504,52 @@ def on_mw_delete(status: dict, logger, **_):
             "was not able to determine the MW ID for deletion") from error
     except Exception as error:
         raise kopf.PermanentError(f"deleting MW failed: {error}") from error
+
+@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+def on_ac_create(name: str, spec: dict, logger, **_):
+    identifier = create_ac(
+        logger,
+        **crds.AlertContactV1Beta1.spec_to_request_dict(name, spec)
+    )
+
+    return {AC_ID_KEY: identifier}
+
+@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+def on_ac_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
+    try:
+        identifier = get_ac_identifier(status)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the AC ID for update") from error
+
+    update_payload = crds.AlertContactV1Beta1.spec_to_request_dict(name, spec)
+
+    if type_changed(diff) or spec['type'] != crds.AlertContactType.WEB_HOOK.name:
+        logger.info('alert contact type changed or is not of type WEB_HOOK, need to delete and recreate')
+        delete_ac(logger, identifier)
+
+        identifier = create_ac(
+            logger,
+            **update_payload
+        )
+    else:
+        update_payload.pop('type', None) # update does not accept type parameter
+
+        identifier = update_ac(
+            logger,
+            identifier,
+            **update_payload
+        )
+
+    return {AC_ID_KEY: identifier}
+
+@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+def on_ac_delete(status: dict, logger, **_):
+    try:  # making sure to catch all exceptions here to prevent blocking deletion
+        identifier = get_ac_identifier(status)
+        delete_ac(logger, identifier)
+    except KeyError as error:
+        raise kopf.PermanentError(
+            "was not able to determine the AC ID for deletion") from error
+    except Exception as error:
+        raise kopf.PermanentError(f"deleting AC failed: {error}") from error

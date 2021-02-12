@@ -3,7 +3,7 @@ import kubernetes.client as k8s_client
 import kubernetes.config as k8s_config
 import sys
 
-from .utils import namespace_handling, kopf_runner, NAMESPACE
+from .utils import namespace_handling, kopf_runner, NAMESPACE, DEFAULT_WAIT_TIME
 
 import os
 import time
@@ -22,17 +22,17 @@ core_api = k8s_client.CoreV1Api()
 uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
-def create_k8s_ur_psp(namespace, name, wait_for_seconds=1, **spec):
+def create_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
     k8s.create_k8s_crd_obj(crds.PspV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
-def update_k8s_ur_psp(namespace, name, wait_for_seconds=1, **spec):
+def update_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
     k8s.update_k8s_crd_obj(crds.PspV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
-def delete_k8s_ur_psp(namespace, name, wait_for_seconds=1):
+def delete_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
     k8s.delete_k8s_crd_obj(crds.PspV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
