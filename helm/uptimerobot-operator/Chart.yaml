@@ -3,4 +3,4 @@ name: uptimerobot-operator
 description: A Kubernetes operator that creates uptime monitors for your ingresses
 type: application
 version: 0.2.0
-appVersion: "v0.2.0"
+appVersion: "v0.3.0"

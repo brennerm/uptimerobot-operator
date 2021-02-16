@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.3.0] - 2021-02-16
+
 ### Added
 
 - introducing the PublicStatusPage resource to setup UptimeRobot status pages [#15](https://github.com/brennerm/uptimerobot-operator/pull/15)
 - introducing the MaintenanceWindow resource to setup UptimeRobot maintenance windows [#16](https://github.com/brennerm/uptimerobot-operator/pull/16)
+- introducing the AlertContact resource to setup UptimeRobot alert contacts [#21](https://github.com/brennerm/uptimerobot-operator/pull/21)
 
 ## [v0.2.0] - 2021-02-08
 
