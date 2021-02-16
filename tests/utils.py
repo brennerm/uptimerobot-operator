@@ -16,14 +16,15 @@ k8s_config.load_kube_config()
 core_api = k8s_client.CoreV1Api()
 
 NAMESPACE = "ur-operator-testing"
+DEFAULT_WAIT_TIME = 1
 
-def delete_namespace(name, timeout_seconds=20):
+def delete_namespace(name, timeout_seconds=30):
     core_api.delete_namespace(name)
     deadline = time.time() + timeout_seconds
 
     while time.time() < deadline:
         try:
-            time.sleep(0.1)
+            time.sleep(0.5)
             core_api.read_namespace_status(name)
         except k8s_client.rest.ApiException as e:
             if e.status == 404:
@@ -39,7 +40,7 @@ def delete_namespace(name, timeout_seconds=20):
 def kopf_runner():
     with kt.KopfRunner(['run', '--standalone', '-A', 'ur_operator/handlers.py']) as runner:
         # wait for operator to start
-        time.sleep(2)
+        time.sleep(5)
         yield runner
 
 @pytest.fixture(scope='class')
@@ -48,7 +49,7 @@ def kopf_runner_without_ingress_handling():
 
     with kt.KopfRunner(['run', '--standalone', '-A', 'ur_operator/handlers.py']) as runner:
         # wait for operator to start
-        time.sleep(2)
+        time.sleep(5)
         yield runner
 
     os.environ.pop('URO_DISABLE_INGRESS_HANDLING')

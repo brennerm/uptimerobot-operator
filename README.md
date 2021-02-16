@@ -2,8 +2,9 @@
 
 This operator automatically creates uptime monitors at [UptimeRobot](https://uptimerobot.com) for your Kubernetes Ingress resources. This allows you to easily integrate uptime monitoring of your services into your Kubernetes deployments.
 
-> :warning: **This project is in an very early phase. Do not use it in a productive environment and expect to miss a lot of features. Feel free to create issues for things you would like to see though.**
-> **Additionally I'm not able to test pro plan features, e.g. like Hearbeat monitors as I don't have a pro account. They are implemented according to UptimeRobot's documentation but don't expect them to work.**
+> :warning: **This project is still in an early phase. Use it on your own risk but make sure to create issues for issues you encounter.**
+
+:heart: to UptimeRobot for providing a pro account to be able to test the pro plan features!
 
 ## Usage
 
@@ -186,13 +187,33 @@ spec:
   duration: 30
 ```
 
+### Alert Contacts
+
+The AlertContact resource supports all current parameters for alert contacts that UptimeRobot offers. Below you can find a list that contains all of them.
+
+|key|type|description|
+|-|-|-|
+|`type` (required)|`string`|the type of alert contact, one of: SMS,EMAIL,TWITTER_DM,BOXCAR,WEB_HOOK,PUSHBULLET,ZAPIER,PUSHOVER,HIPCHAT,SLACK|
+|`value` (required)|`string`|the alert contact's mail address / phone number / URL / connection string|
+|`friendlyName`|`string`|friendly name of the alert contact, defaults to name of the AlertContact object|
+
+```yaml
+apiVersion: uroperator.brennerm.github.io/v1beta1
+kind: AlertContact
+metadata:
+  name: my-alert-contact
+spec:
+  type: EMAIL
+  value: foo@bar.com
+```
+
 ## Planned features
 
 - provide a Helm chart to ease deployment :heavy_check_mark:
 - support all configuration parameters for Monitors that UptimeRobot offers :heavy_check_mark:
-- add support for creating Uptime Robot
-  - alert contacts,
-  - maintenance windows
+- add support for creating Uptime Robot :heavy_check_mark:
+  - alert contacts, :heavy_check_mark:
+  - maintenance windows :heavy_check_mark:
   - public status pages using Kubernetes resources :heavy_check_mark:
 - implement automatic detection of HTTP path of Ingress resources
 - add an integration for external-dns to support creating monitors for Service resources

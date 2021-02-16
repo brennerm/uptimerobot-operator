@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 import ur_operator.crds as crds
 
-for crd in [crds.MonitorV1Beta1, crds.PspV1Beta1, crds.MaintenanceWindowV1Beta1]:
+for crd in [crds.MonitorV1Beta1, crds.PspV1Beta1, crds.MaintenanceWindowV1Beta1, crds.AlertContactV1Beta1]:
     print('|key|type|description|')
     print('|-|-|-|')
 
