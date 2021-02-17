@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 
 import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
+from ur_operator.crds.alert_contact import AlertContactV1Beta1, AlertContactType
 from ur_operator.k8s import K8s
 
 
@@ -23,24 +23,24 @@ uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_ac(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.create_k8s_crd_obj(crds.AlertContactV1Beta1, namespace, name, **spec)
+    k8s.create_k8s_crd_obj(AlertContactV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def update_k8s_ur_ac(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.update_k8s_crd_obj(crds.AlertContactV1Beta1, namespace, name, **spec)
+    k8s.update_k8s_crd_obj(AlertContactV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def delete_k8s_ur_ac(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
-    k8s.delete_k8s_crd_obj(crds.AlertContactV1Beta1, namespace, name)
+    k8s.delete_k8s_crd_obj(AlertContactV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
 
 class TestDefaultOperator:
     def test_create_email_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.EMAIL
+        ac_type = AlertContactType.EMAIL
         value = 'foo@bar.com'
 
         create_k8s_ur_ac(NAMESPACE, name, type=ac_type.name, value=value)
@@ -55,7 +55,7 @@ class TestDefaultOperator:
     @pytest.mark.skip(reason='needs fixing')
     def test_create_twitter_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.TWITTER_DM
+        ac_type = AlertContactType.TWITTER_DM
         value = '__brennerm'
 
         create_k8s_ur_ac(NAMESPACE, name, type=ac_type.name, value=value)
@@ -68,7 +68,7 @@ class TestDefaultOperator:
 
     def test_create_webhook_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.WEB_HOOK
+        ac_type = AlertContactType.WEB_HOOK
         value = 'https://brennerm.github.io?'
 
         create_k8s_ur_ac(NAMESPACE, name, type=ac_type.name, value=value)
@@ -82,7 +82,7 @@ class TestDefaultOperator:
     def test_create_mw_with_friendly_name(self, kopf_runner, namespace_handling):
         name = 'foo'
         friendly_name = 'bar'
-        ac_type = crds.AlertContactType.EMAIL
+        ac_type = AlertContactType.EMAIL
         value = 'foo@bar.com'
 
         create_k8s_ur_ac(NAMESPACE, name, type=ac_type.name, value=value, friendlyName=friendly_name)
@@ -96,7 +96,7 @@ class TestDefaultOperator:
     def test_update_ac_change_mail(self, kopf_runner, namespace_handling):
         name = 'foo'
         new_name = 'bar'
-        ac_type = crds.AlertContactType.EMAIL
+        ac_type = AlertContactType.EMAIL
         value = 'foo@bar.com'
         new_value = 'bar@foo.com'
 
@@ -116,7 +116,7 @@ class TestDefaultOperator:
 
     def test_update_ac_change_webhook_url(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.WEB_HOOK
+        ac_type = AlertContactType.WEB_HOOK
         value = 'https://brennerm.github.io?'
         new_value = 'https://brennerm.github.com?'
 
@@ -134,8 +134,8 @@ class TestDefaultOperator:
 
     def test_update_ac_change_type(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.EMAIL
-        new_ac_type = crds.AlertContactType.WEB_HOOK
+        ac_type = AlertContactType.EMAIL
+        new_ac_type = AlertContactType.WEB_HOOK
         value = 'foo@bar.com'
         new_value = 'https://brennerm.github.com?'
 
@@ -155,7 +155,7 @@ class TestDefaultOperator:
 
     def test_delete_ac(self, kopf_runner, namespace_handling):
         name = 'foo'
-        ac_type = crds.AlertContactType.EMAIL
+        ac_type = AlertContactType.EMAIL
         value = 'foo@bar.com'
 
         create_k8s_ur_ac(NAMESPACE, name, type=ac_type.name, value=value)

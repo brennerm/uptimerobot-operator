@@ -4,4 +4,3 @@ metadata:
   name: my-public-status-page
 spec:
   monitors: "0" # will include all monitors
-  password: "s3cr3t"

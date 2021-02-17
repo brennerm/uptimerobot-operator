@@ -36,6 +36,19 @@ def delete_namespace(name, timeout_seconds=30):
 
     raise TimeoutError()
 
+def create_opaque_secret(namespace, name, data):
+    return core_api.create_namespaced_secret(
+        namespace,
+        k8s_client.V1Secret(
+            api_version='v1',
+            data=data,
+            kind='Secret',
+            metadata={'namespace': namespace, 'name': name},
+            type='Opaque'
+        )
+    )
+
+
 @pytest.fixture(scope='class')
 def kopf_runner():
     with kt.KopfRunner(['run', '--standalone', '-A', 'ur_operator/handlers.py']) as runner:

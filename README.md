@@ -149,7 +149,8 @@ The PublicStatusPage resource supports all current parameters for status pages t
 |`monitors` (required)|`string`|the list of monitor IDs to be displayed in status page (the values are seperated with "-" or 0 for all monitors)|
 |`friendlyName`|`string`|Friendly name of public status page, defaults to name of PublicStatusPage object|
 |`customDomain`|`string`|the domain or subdomain that the status page will run on|
-|`password`|`string`|the password for the status page|
+|`password`|`string`|the password for the status page, deprecated: use passwordSecret|
+|`passwordSecret`|`string`|reference to a Kubernetes secret in the same namespace containing the password for the status page|
 |`sort`|`string`|the sorting of the monitors on the status page, one of: FRIENDLY_NAME_A_Z,FRIENDLY_NAME_Z_A,STATUS_UP_DOWN_PAUSED,STATUS_DOWN_UP_PAUSED|
 |`status`|`string`|the status of the status page, one of: PAUSED,ACTIVE|
 |`hideUrlLinks`|`boolean`|Flag to remove the UptimeRobot link from the status page (pro plan feature)|
@@ -161,7 +162,6 @@ metadata:
   name: my-public-status-page
 spec:
   monitors: "0" # will include all monitors
-  password: "s3cr3t"
 ```
 
 ### Maintenance Windows

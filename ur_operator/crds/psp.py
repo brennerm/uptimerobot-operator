@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-
 import enum
+import base64
 
 import kubernetes.client as k8s_client
 
+from k8s import K8s
 from .constants import GROUP
 from .utils import camel_to_snake_case
-
 
 @enum.unique
 class PspStatus(enum.Enum):
@@ -46,7 +46,11 @@ class PspV1Beta1:
         ),
         'password': k8s_client.V1JSONSchemaProps(
             type='string',
-            description='the password for the status page'
+            description='the password for the status page, deprecated: use passwordSecret'
+        ),
+        'passwordSecret': k8s_client.V1JSONSchemaProps(
+            type='string',
+            description='reference to a Kubernetes secret in the same namespace containing the password for the status page'
         ),
         'sort': k8s_client.V1JSONSchemaProps(
             type='string',
@@ -104,10 +108,18 @@ class PspV1Beta1:
     )
 
     @staticmethod
-    def spec_to_request_dict(name: str, spec: dict) -> dict:
+    def spec_to_request_dict(namespace: str, name: str, spec: dict) -> dict:
+        k8s = K8s()
+
         # convert all keys from camel to snake case
         request_dict = {camel_to_snake_case(k): v for k, v in spec.items()}
         request_dict['friendly_name'] = request_dict.get('friendly_name', name)
+
+        if 'password_secret' in request_dict:
+            secret = k8s.get_secret(namespace, request_dict['password_secret'])
+
+            request_dict['password'] = base64.b64decode(secret.data['password']).decode()
+            request_dict.pop('password_secret')
 
         # map enum values
         for key, enum_class in {
@@ -118,5 +130,6 @@ class PspV1Beta1:
                                            ].value if key in request_dict else None
 
         # drop None entries
+        print(request_dict)
 
         return {k: v for k, v in request_dict.items() if v is not None}

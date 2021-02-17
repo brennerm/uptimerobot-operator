@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 
 import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
+from ur_operator.crds.maintenance_window import MaintenanceWindowV1Beta1, MaintenanceWindowType
 from ur_operator.k8s import K8s
 
 
@@ -23,24 +23,24 @@ uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_mw(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.create_k8s_crd_obj(crds.MaintenanceWindowV1Beta1, namespace, name, **spec)
+    k8s.create_k8s_crd_obj(MaintenanceWindowV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def update_k8s_ur_mw(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.update_k8s_crd_obj(crds.MaintenanceWindowV1Beta1, namespace, name, **spec)
+    k8s.update_k8s_crd_obj(MaintenanceWindowV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def delete_k8s_ur_mw(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
-    k8s.delete_k8s_crd_obj(crds.MaintenanceWindowV1Beta1, namespace, name)
+    k8s.delete_k8s_crd_obj(MaintenanceWindowV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
 
 class TestDefaultOperator:
     def test_create_once_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.ONCE
+        mw_type = MaintenanceWindowType.ONCE
         start_time = str(int(time.time()) + 60)
         duration = 30
 
@@ -55,7 +55,7 @@ class TestDefaultOperator:
 
     def test_create_daily_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.DAILY
+        mw_type = MaintenanceWindowType.DAILY
         start_time = '06:30'
         duration = 30
 
@@ -70,7 +70,7 @@ class TestDefaultOperator:
 
     def test_create_weekly_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.WEEKLY
+        mw_type = MaintenanceWindowType.WEEKLY
         start_time = '06:30'
         duration = 30
         value = '2-4-5'
@@ -87,7 +87,7 @@ class TestDefaultOperator:
 
     def test_create_monthly_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.MONTHLY
+        mw_type = MaintenanceWindowType.MONTHLY
         start_time = '06:30'
         duration = 30
         value = '1-11-21-31'
@@ -105,7 +105,7 @@ class TestDefaultOperator:
     def test_create_mw_with_friendly_name(self, kopf_runner, namespace_handling):
         name = 'foo'
         friendly_name = 'bar'
-        mw_type = crds.MaintenanceWindowType.ONCE
+        mw_type = MaintenanceWindowType.ONCE
         start_time = str(int(time.time()) + 60)
         duration = 30
 
@@ -118,7 +118,7 @@ class TestDefaultOperator:
     def test_update_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
         new_name = 'bar'
-        mw_type = crds.MaintenanceWindowType.ONCE
+        mw_type = MaintenanceWindowType.ONCE
         start_time = str(int(time.time()) + 60)
         duration = 30
         new_duration = 30
@@ -139,8 +139,8 @@ class TestDefaultOperator:
 
     def test_update_mw_change_type(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.ONCE
-        new_mw_type = crds.MaintenanceWindowType.DAILY
+        mw_type = MaintenanceWindowType.ONCE
+        new_mw_type = MaintenanceWindowType.DAILY
         start_time = str(int(time.time()) + 60)
         new_start_time = '10:00'
         duration = 30
@@ -161,7 +161,7 @@ class TestDefaultOperator:
 
     def test_delete_mw(self, kopf_runner, namespace_handling):
         name = 'foo'
-        mw_type = crds.MaintenanceWindowType.ONCE
+        mw_type = MaintenanceWindowType.ONCE
         start_time = str(int(time.time()) + 60)
         duration = 30
 

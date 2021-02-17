@@ -3,9 +3,8 @@ import logging
 import kubernetes.config as k8s_config
 import kubernetes.client as k8s_client
 
-
-import crds
-
+from crds import constants
+from crds import monitor
 
 class K8s:
     def __init__(self):
@@ -18,6 +17,7 @@ class K8s:
             raise error
 
         self.custom_objects_api = k8s_client.CustomObjectsApi()
+        self.core_api = k8s_client.CoreV1Api()
 
     @staticmethod
     def construct_k8s_ur_monitor_body(namespace, name=None, **spec):
@@ -29,15 +29,15 @@ class K8s:
             metadata['name'] = name
 
         return {
-            'apiVersion': f'{crds.GROUP}/{crds.MonitorV1Beta1.version}',
-            'kind': crds.MonitorV1Beta1.kind,
+            'apiVersion': f'{constants.GROUP}/{monitor.MonitorV1Beta1.version}',
+            'kind': monitor.MonitorV1Beta1.kind,
             'metadata': metadata,
             'spec': spec
         }
 
     def create_k8s_crd_obj_with_body(self, crd, namespace, body):
         return self.custom_objects_api.create_namespaced_custom_object(
-            group=crds.GROUP,
+            group=constants.GROUP,
             version=crd.version,
             namespace=namespace,
             plural=crd.plural,
@@ -46,7 +46,7 @@ class K8s:
 
     def update_k8s_crd_obj_with_body(self, crd, namespace, name, body):
         return self.custom_objects_api.patch_namespaced_custom_object(
-            group=crds.GROUP,
+            group=constants.GROUP,
             version=crd.version,
             plural=crd.plural,
             namespace=namespace,
@@ -59,7 +59,7 @@ class K8s:
             crd,
             namespace,
             {
-                'apiVersion': f'{crds.GROUP}/{crd.version}',
+                'apiVersion': f'{constants.GROUP}/{crd.version}',
                 'kind': crd.kind,
                 'metadata': {'name': name, 'namespace': namespace},
                 'spec': spec
@@ -78,9 +78,12 @@ class K8s:
 
     def delete_k8s_crd_obj(self, crd, namespace, name):
         self.custom_objects_api.delete_namespaced_custom_object(
-            group=crds.GROUP,
+            group=constants.GROUP,
             version=crd.version,
             plural=crd.plural,
             namespace=namespace,
             name=name,
         )
+
+    def get_secret(self, namespace, name):
+        return self.core_api.read_namespaced_secret(name, namespace)
