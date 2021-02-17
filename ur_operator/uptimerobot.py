@@ -1,5 +1,4 @@
 import logging
-import os
 
 import uptimerobotpy as ur
 import config

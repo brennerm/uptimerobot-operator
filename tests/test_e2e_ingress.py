@@ -1,4 +1,3 @@
-import pytest
 import kopf.testing as kt
 import kubernetes.client as k8s_client
 import kubernetes.config as k8s_config
@@ -13,7 +12,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 
 import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
+from ur_operator.crds.monitor import MonitorType, MonitorHttpAuthType
+from ur_operator.crds.constants import GROUP
 from ur_operator.k8s import K8s
 
 k8s_config.load_kube_config()
@@ -28,7 +28,7 @@ def create_k8s_ingress(namespace, name, urls, annotations={}, wait_for_seconds=D
             kind='Ingress',
             metadata=k8s_client.V1ObjectMeta(
                 name=name,
-                annotations={f'{crds.GROUP}/{k}': v for k,v in annotations.items()}
+                annotations={f'{GROUP}/{k}': v for k,v in annotations.items()}
                 ),
             spec=k8s_client.NetworkingV1beta1IngressSpec(
                 rules=[
@@ -52,7 +52,7 @@ def update_k8s_ingress(namespace, name, urls, annotations={}, wait_for_seconds=D
             kind='Ingress',
             metadata=k8s_client.V1ObjectMeta(
                 name=name,
-                annotations={f'{crds.GROUP}/{k}': v for k,v in annotations.items()}
+                annotations={f'{GROUP}/{k}': v for k,v in annotations.items()}
             ),
             spec=k8s_client.NetworkingV1beta1IngressSpec(
                 rules=[
@@ -83,12 +83,12 @@ class TestDefaultOperator:
         assert len(monitors) == 1
         assert monitors[0]['friendly_name'].startswith(name)
         assert monitors[0]['url'] == url
-        assert monitors[0]['type'] == crds.MonitorType.PING.value
+        assert monitors[0]['type'] == MonitorType.PING.value
 
     def test_create_http_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
-        monitor_type = crds.MonitorType.HTTP
+        monitor_type = MonitorType.HTTP
 
         create_k8s_ingress(NAMESPACE, name, [url], {'monitor.type': 'HTTP'})
 
@@ -101,7 +101,7 @@ class TestDefaultOperator:
     def test_create_https_ingress(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
-        monitor_type = crds.MonitorType.HTTPS
+        monitor_type = MonitorType.HTTPS
 
         create_k8s_ingress(NAMESPACE, name, [url], {'monitor.type': 'HTTPS'})
 
@@ -121,7 +121,7 @@ class TestDefaultOperator:
             'monitor.type': 'HTTP',
             'monitor.httpUsername': username,
             'monitor.httpPassword': password,
-            'monitor.httpAuthType': crds.MonitorHttpAuthType.BASIC_AUTH.name
+            'monitor.httpAuthType': MonitorHttpAuthType.BASIC_AUTH.name
         })
 
         monitors = uptime_robot.get_all_monitors()['monitors']
@@ -139,7 +139,7 @@ class TestDefaultOperator:
             'monitor.type': 'HTTP',
             'monitor.httpUsername': username,
             'monitor.httpPassword': password,
-            'monitor.httpAuthType': crds.MonitorHttpAuthType.DIGEST.name
+            'monitor.httpAuthType': MonitorHttpAuthType.DIGEST.name
         })
 
         monitors = uptime_robot.get_all_monitors()['monitors']
@@ -199,8 +199,8 @@ class TestDefaultOperator:
     def test_update_ingress_change_type(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'foo.com'
-        monitor_type = crds.MonitorType.HTTP
-        new_monitor_type = crds.MonitorType.PING
+        monitor_type = MonitorType.HTTP
+        new_monitor_type = MonitorType.PING
 
         create_k8s_ingress(NAMESPACE, name, [url], {'monitor.type': monitor_type.name})
 

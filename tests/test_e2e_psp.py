@@ -1,9 +1,9 @@
-import pytest
+import base64
 import kubernetes.client as k8s_client
 import kubernetes.config as k8s_config
 import sys
 
-from .utils import namespace_handling, kopf_runner, NAMESPACE, DEFAULT_WAIT_TIME
+from .utils import namespace_handling, kopf_runner, create_opaque_secret, NAMESPACE, DEFAULT_WAIT_TIME
 
 import os
 import time
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 
 import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
+from ur_operator.crds.psp import PspV1Beta1, PspSort
 from ur_operator.k8s import K8s
 
 
@@ -23,17 +23,17 @@ uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.create_k8s_crd_obj(crds.PspV1Beta1, namespace, name, **spec)
+    k8s.create_k8s_crd_obj(PspV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def update_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.update_k8s_crd_obj(crds.PspV1Beta1, namespace, name, **spec)
+    k8s.update_k8s_crd_obj(PspV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def delete_k8s_ur_psp(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
-    k8s.delete_k8s_crd_obj(crds.PspV1Beta1, namespace, name)
+    k8s.delete_k8s_crd_obj(PspV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
 
@@ -42,7 +42,7 @@ class TestDefaultOperator:
         name = 'foo'
         monitors = '0'
         password = 's3cr3t'
-        sort = crds.PspSort.STATUS_DOWN_UP_PAUSED
+        sort = PspSort.STATUS_DOWN_UP_PAUSED
 
         create_k8s_ur_psp(NAMESPACE, name, monitors=monitors, password=password, sort=sort.name)
 
@@ -64,7 +64,6 @@ class TestDefaultOperator:
         assert psps[0]['friendly_name'] == friendly_name
         assert psps[0]['monitors'] == 0
 
-    @pytest.mark.skip(reason='not able to test pro features')
     def test_create_psp_with_hidden_url_links(self, kopf_runner, namespace_handling):
         name = 'foo'
         monitors = '0'
@@ -76,7 +75,20 @@ class TestDefaultOperator:
         assert len(psps) == 1
         assert psps[0]['friendly_name'] == name
         assert psps[0]['monitors'] == 0
-        assert psps[0]['hidden_url_links'] == hiddenUrlLinks
+
+    def test_create_psp_with_password_secret(self, kopf_runner, namespace_handling):
+        name = 'foo'
+        monitors = '0'
+        passwordSecretName = 'my-password-secret'
+        passwordSecretValue = 's3cr3t'
+
+        create_opaque_secret(NAMESPACE, passwordSecretName, {'password': base64.b64encode(passwordSecretValue.encode()).decode()})
+        create_k8s_ur_psp(NAMESPACE, name, monitors=monitors, passwordSecret=passwordSecretName)
+
+        psps = uptime_robot.get_psp()['psps']
+        assert len(psps) == 1
+        assert psps[0]['friendly_name'] == name
+        assert psps[0]['monitors'] == 0
 
     def test_update_psp(self, kopf_runner, namespace_handling):
         name = 'foo'

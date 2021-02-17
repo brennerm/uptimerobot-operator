@@ -4,9 +4,13 @@ import kubernetes.config as k8s_config
 import kubernetes.client as k8s_client
 import kopf
 
-import crds
+from crds.monitor import MonitorV1Beta1, MonitorType
+from crds.psp import PspV1Beta1
+from crds.maintenance_window import MaintenanceWindowV1Beta1
+from crds.alert_contact import AlertContactV1Beta1, AlertContactType
+from crds.constants import GROUP
 from k8s import K8s
-import uptimerobot
+import uptimerobot 
 from config import Config
 
 MONITOR_ID_KEY = 'monitor_id'
@@ -30,7 +34,7 @@ def create_crds(logger):
         k8s_config.load_incluster_config()
 
     api_instance = k8s_client.ApiextensionsV1Api()
-    for crd in [crds.MonitorV1Beta1.crd, crds.PspV1Beta1.crd, crds.MaintenanceWindowV1Beta1.crd, crds.AlertContactV1Beta1.crd]:
+    for crd in [MonitorV1Beta1.crd, PspV1Beta1.crd, MaintenanceWindowV1Beta1.crd, AlertContactV1Beta1.crd]:
         try:
             api_instance.create_custom_resource_definition(crd)
             logger.info(f'CRD {crd.metadata.name} successfully created')
@@ -289,7 +293,7 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
         logger.debug('handling of Ingress resources has been disabled')
         return
 
-    monitor_prefix = f'{crds.GROUP}/monitor.'
+    monitor_prefix = f'{GROUP}/monitor.'
     monitor_spec = {k.replace(monitor_prefix, ''): v for k, v in annotations.items() if k.startswith(monitor_prefix)}
 
     index = 0
@@ -304,7 +308,7 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
 
         # we default to a ping check
         if 'type' not in monitor_spec:
-            monitor_spec['type'] = crds.MonitorType.PING.name
+            monitor_spec['type'] = MonitorType.PING.name
 
         if monitor_spec['type'] == 'HTTP':
             monitor_spec['url'] = f"http://{host}"
@@ -314,10 +318,10 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
             monitor_spec['url'] = host
 
         monitor_body = K8s.construct_k8s_ur_monitor_body(
-            namespace, name=f"{name}-{index}", **crds.MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
+            namespace, name=f"{name}-{index}", **MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
-        k8s.create_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_body)
+        k8s.create_k8s_crd_obj_with_body(MonitorV1Beta1, namespace, monitor_body)
         logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         index += 1
 
@@ -328,7 +332,7 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         logger.debug('handling of Ingress resources has been disabled')
         return
 
-    monitor_prefix = f'{crds.GROUP}/monitor.'
+    monitor_prefix = f'{GROUP}/monitor.'
     monitor_spec = {k.replace(monitor_prefix, ''): v for k, v in annotations.items() if k.startswith(monitor_prefix)}
 
     previous_rule_count = len(old['spec']['rules'])
@@ -345,7 +349,7 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
 
         # we default to a ping check
         if 'type' not in monitor_spec:
-            monitor_spec['type'] = crds.MonitorType.PING.name
+            monitor_spec['type'] = MonitorType.PING.name
 
         if monitor_spec['type'] == 'HTTP':
             monitor_spec['url'] = f"http://{host}"
@@ -357,33 +361,33 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         monitor_name = f"{name}-{index}"
 
         monitor_body = K8s.construct_k8s_ur_monitor_body(
-            namespace, name=monitor_name, **crds.MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
+            namespace, name=monitor_name, **MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
         if index >= previous_rule_count:  # at first update existing UptimeRobotMonitors, we currently don't check if there's actually a change
-            k8s.create_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_body)
+            k8s.create_k8s_crd_obj_with_body(MonitorV1Beta1, namespace, monitor_body)
             logger.info(f'created new UptimeRobotMonitor object for URL {host}')
         else:  # then create new UptimeRobotMonitors
-            k8s.update_k8s_crd_obj_with_body(crds.MonitorV1Beta1, namespace, monitor_name, monitor_body)
+            k8s.update_k8s_crd_obj_with_body(MonitorV1Beta1, namespace, monitor_name, monitor_body)
             logger.info(f'updated UptimeRobotMonitor object for URL {host}')
 
         index += 1
 
     while index < previous_rule_count:  # make sure to clean up remaining UptimeRobotMonitors
-        k8s.delete_k8s_crd_obj(crds.MonitorV1Beta1, namespace, f"{name}-{index}")
+        k8s.delete_k8s_crd_obj(MonitorV1Beta1, namespace, f"{name}-{index}")
         logger.info('deleted obsolete UptimeRobotMonitor object')
         index += 1
 
-@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
+@kopf.on.create(GROUP, MonitorV1Beta1.version, MonitorV1Beta1.plural)
 def on_create(name: str, spec: dict, logger, **_):
     identifier = create_monitor(
         logger,
-        **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
+        **MonitorV1Beta1.spec_to_request_dict(name, spec)
     )
 
     return {MONITOR_ID_KEY: identifier}
 
-@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
+@kopf.on.update(GROUP, MonitorV1Beta1.version, MonitorV1Beta1.plural)
 def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
     try:
         identifier = get_identifier(status)
@@ -397,19 +401,19 @@ def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
 
         identifier = create_monitor(
             logger,
-            **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
+            **MonitorV1Beta1.spec_to_request_dict(name, spec)
         )
     else:
         identifier = update_monitor(
             logger,
             identifier,
-            **crds.MonitorV1Beta1.spec_to_request_dict(name, spec)
+            **MonitorV1Beta1.spec_to_request_dict(name, spec)
         )
 
     return {MONITOR_ID_KEY: identifier}
 
 
-@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.MonitorV1Beta1.plural)
+@kopf.on.delete(GROUP, MonitorV1Beta1.version, MonitorV1Beta1.plural)
 def on_delete(status: dict, logger, **_):
     try:  # making sure to catch all exceptions here to prevent blocking deletion
         identifier = get_identifier(status)
@@ -420,17 +424,17 @@ def on_delete(status: dict, logger, **_):
     except Exception as error:
         raise kopf.PermanentError(f"deleting monitor failed: {error}") from error
 
-@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
-def on_psp_create(name: str, spec: dict, logger, **_):
+@kopf.on.create(GROUP, MonitorV1Beta1.version, PspV1Beta1.plural)
+def on_psp_create(namespace: str, name: str, spec: dict, logger, **_):
     identifier = create_psp(
         logger,
-        **crds.PspV1Beta1.spec_to_request_dict(name, spec)
+        **PspV1Beta1.spec_to_request_dict(namespace, name, spec)
     )
 
     return {PSP_ID_KEY: identifier}
 
-@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
-def on_psp_update(name: str, spec: dict, status: dict, logger, **_):
+@kopf.on.update(GROUP, MonitorV1Beta1.version, PspV1Beta1.plural)
+def on_psp_update(namespace: str, name: str, spec: dict, status: dict, logger, **_):
     try:
         identifier = get_psp_identifier(status)
     except KeyError as error:
@@ -440,12 +444,12 @@ def on_psp_update(name: str, spec: dict, status: dict, logger, **_):
     identifier = update_psp(
         logger,
         identifier,
-        **crds.PspV1Beta1.spec_to_request_dict(name, spec)
+        **PspV1Beta1.spec_to_request_dict(namespace, name, spec)
     )
 
     return {PSP_ID_KEY: identifier}
 
-@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.PspV1Beta1.plural)
+@kopf.on.delete(GROUP, MonitorV1Beta1.version, PspV1Beta1.plural)
 def on_psp_delete(status: dict, logger, **_):
     try:  # making sure to catch all exceptions here to prevent blocking deletion
         identifier = get_psp_identifier(status)
@@ -456,16 +460,16 @@ def on_psp_delete(status: dict, logger, **_):
     except Exception as error:
         raise kopf.PermanentError(f"deleting PSP failed: {error}") from error
 
-@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+@kopf.on.create(GROUP, MonitorV1Beta1.version, MaintenanceWindowV1Beta1.plural)
 def on_mw_create(name: str, spec: dict, logger, **_):
     identifier = create_mw(
         logger,
-        **crds.MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
+        **MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
     )
 
     return {MW_ID_KEY: identifier}
 
-@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+@kopf.on.update(GROUP, MonitorV1Beta1.version, MaintenanceWindowV1Beta1.plural)
 def on_mw_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
     try:
         identifier = get_mw_identifier(status)
@@ -473,7 +477,7 @@ def on_mw_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
         raise kopf.PermanentError(
             "was not able to determine the MW ID for update") from error
 
-    update_payload = crds.MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
+    update_payload = MaintenanceWindowV1Beta1.spec_to_request_dict(name, spec)
 
     if type_changed(diff):
         logger.info('maintenance window type changed, need to delete and recreate')
@@ -494,7 +498,7 @@ def on_mw_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
 
     return {MW_ID_KEY: identifier}
 
-@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.MaintenanceWindowV1Beta1.plural)
+@kopf.on.delete(GROUP, MonitorV1Beta1.version, MaintenanceWindowV1Beta1.plural)
 def on_mw_delete(status: dict, logger, **_):
     try:  # making sure to catch all exceptions here to prevent blocking deletion
         identifier = get_mw_identifier(status)
@@ -505,16 +509,16 @@ def on_mw_delete(status: dict, logger, **_):
     except Exception as error:
         raise kopf.PermanentError(f"deleting MW failed: {error}") from error
 
-@kopf.on.create(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+@kopf.on.create(GROUP, MonitorV1Beta1.version, AlertContactV1Beta1.plural)
 def on_ac_create(name: str, spec: dict, logger, **_):
     identifier = create_ac(
         logger,
-        **crds.AlertContactV1Beta1.spec_to_request_dict(name, spec)
+        **AlertContactV1Beta1.spec_to_request_dict(name, spec)
     )
 
     return {AC_ID_KEY: identifier}
 
-@kopf.on.update(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+@kopf.on.update(GROUP, MonitorV1Beta1.version, AlertContactV1Beta1.plural)
 def on_ac_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
     try:
         identifier = get_ac_identifier(status)
@@ -522,9 +526,9 @@ def on_ac_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
         raise kopf.PermanentError(
             "was not able to determine the AC ID for update") from error
 
-    update_payload = crds.AlertContactV1Beta1.spec_to_request_dict(name, spec)
+    update_payload = AlertContactV1Beta1.spec_to_request_dict(name, spec)
 
-    if type_changed(diff) or spec['type'] != crds.AlertContactType.WEB_HOOK.name:
+    if type_changed(diff) or spec['type'] != AlertContactType.WEB_HOOK.name:
         logger.info('alert contact type changed or is not of type WEB_HOOK, need to delete and recreate')
         delete_ac(logger, identifier)
 
@@ -543,7 +547,7 @@ def on_ac_update(name: str, spec: dict, status: dict, logger, diff: dict, **_):
 
     return {AC_ID_KEY: identifier}
 
-@kopf.on.delete(crds.GROUP, crds.MonitorV1Beta1.version, crds.AlertContactV1Beta1.plural)
+@kopf.on.delete(GROUP, MonitorV1Beta1.version, AlertContactV1Beta1.plural)
 def on_ac_delete(status: dict, logger, **_):
     try:  # making sure to catch all exceptions here to prevent blocking deletion
         identifier = get_ac_identifier(status)

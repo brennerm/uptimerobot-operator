@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(
 
 
 import ur_operator.uptimerobot as uptimerobot
-import ur_operator.crds as crds
+from ur_operator.crds.monitor import MonitorV1Beta1, MonitorType, MonitorSubType, MonitorKeywordType, MonitorHttpAuthType
 from ur_operator.k8s import K8s
 
 
@@ -23,17 +23,17 @@ uptime_robot = uptimerobot.create_uptimerobot_api()
 
 
 def create_k8s_ur_monitor(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.create_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name, **spec)
+    k8s.create_k8s_crd_obj(MonitorV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def update_k8s_ur_monitor(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME, **spec):
-    k8s.update_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name, **spec)
+    k8s.update_k8s_crd_obj(MonitorV1Beta1, namespace, name, **spec)
     time.sleep(wait_for_seconds)
 
 
 def delete_k8s_ur_monitor(namespace, name, wait_for_seconds=DEFAULT_WAIT_TIME):
-    k8s.delete_k8s_crd_obj(crds.MonitorV1Beta1, namespace, name)
+    k8s.delete_k8s_crd_obj(MonitorV1Beta1, namespace, name)
     time.sleep(wait_for_seconds)
 
 
@@ -41,7 +41,7 @@ class TestDefaultOperator:
     def test_create_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
+        monitor_type = MonitorType.HTTPS
         interval = 600
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, interval=interval)
@@ -57,7 +57,7 @@ class TestDefaultOperator:
         name = 'foo'
         friendly_name = 'bar'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
+        monitor_type = MonitorType.HTTPS
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name,
                               url=url, friendlyName=friendly_name)
@@ -69,8 +69,8 @@ class TestDefaultOperator:
     def test_create_http_monitor_with_basic_auth(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
-        http_auth_type = crds.MonitorHttpAuthType.BASIC_AUTH
+        monitor_type = MonitorType.HTTPS
+        http_auth_type = MonitorHttpAuthType.BASIC_AUTH
         username = 'foo'
         password = 'bar'
 
@@ -87,8 +87,8 @@ class TestDefaultOperator:
     def test_create_http_monitor_with_digest_auth(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
-        http_auth_type = crds.MonitorHttpAuthType.DIGEST
+        monitor_type = MonitorType.HTTPS
+        http_auth_type = MonitorHttpAuthType.DIGEST
         username = 'foo'
         password = 'bar'
 
@@ -105,7 +105,7 @@ class TestDefaultOperator:
     def test_create_ping_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.PING
+        monitor_type = MonitorType.PING
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url)
 
@@ -118,8 +118,8 @@ class TestDefaultOperator:
     def test_create_port_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.PORT
-        monitor_sub_type = crds.MonitorSubType.HTTP
+        monitor_type = MonitorType.PORT
+        monitor_sub_type = MonitorSubType.HTTP
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, subType=monitor_sub_type.name)
 
@@ -133,8 +133,8 @@ class TestDefaultOperator:
     def test_create_custom_port_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.PORT
-        monitor_sub_type = crds.MonitorSubType.CUSTOM
+        monitor_type = MonitorType.PORT
+        monitor_sub_type = MonitorSubType.CUSTOM
         port = 1234
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, subType=monitor_sub_type.name, port=port)
@@ -150,8 +150,8 @@ class TestDefaultOperator:
     def test_create_keyword_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.KEYWORD
-        keyword_type = crds.MonitorKeywordType.EXISTS
+        monitor_type = MonitorType.KEYWORD
+        keyword_type = MonitorKeywordType.EXISTS
         keyword_value = 'foo'
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, keywordType=keyword_type.name, keywordValue=keyword_value)
@@ -168,7 +168,7 @@ class TestDefaultOperator:
     def test_create_heartbeat_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HEARTBEAT
+        monitor_type = MonitorType.HEARTBEAT
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url)
 
@@ -184,7 +184,7 @@ class TestDefaultOperator:
         interval = 600
         new_interval = 1200
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
+        monitor_type = MonitorType.HTTPS
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, interval=interval)
 
@@ -203,8 +203,8 @@ class TestDefaultOperator:
     def test_update_monitor_type(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
-        new_monitor_type = crds.MonitorType.PING
+        monitor_type = MonitorType.HTTPS
+        new_monitor_type = MonitorType.PING
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url)
 
@@ -221,7 +221,7 @@ class TestDefaultOperator:
     def test_delete_monitor(self, kopf_runner, namespace_handling):
         name = 'foo'
         url = 'https://foo.com'
-        monitor_type = crds.MonitorType.HTTPS
+        monitor_type = MonitorType.HTTPS
 
         create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url)
 

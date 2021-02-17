@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- new property `passwordSecret` to PublicStatusPage resource, allows to reference password from Kubernetes secret
+
+### Deprecated
+
+- `password` property of PublicStatusPage resource, use `passwordSecret` instead
+
 ## [v0.3.0] - 2021-02-16
 
 ### Added

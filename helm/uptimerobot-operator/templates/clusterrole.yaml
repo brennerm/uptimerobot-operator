@@ -15,6 +15,10 @@ rules:
     resources: [events]
     verbs: [create]
 
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list]
+
 {{ if not .Values.disableIngressHandling }}
   - apiGroups: ["networking.k8s.io"]
     resources: [ingresses]
