@@ -48,6 +48,17 @@ def create_opaque_secret(namespace, name, data):
         )
     )
 
+def create_basic_auth_secret(namespace, name, username, password):
+    return core_api.create_namespaced_secret(
+        namespace,
+        k8s_client.V1Secret(
+            api_version='v1',
+            string_data={'username': username, 'password': password},
+            kind='Secret',
+            metadata={'namespace': namespace, 'name': name},
+            type='kubernetes.io/basic-auth'
+        )
+    )
 
 @pytest.fixture(scope='class')
 def kopf_runner():

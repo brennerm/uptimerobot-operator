@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- new property `passwordSecret` to PublicStatusPage resource, allows to reference password from Kubernetes secret
+- new property `passwordSecret` to PublicStatusPage resource, allows to reference password from Kubernetes secret [#22](https://github.com/brennerm/uptimerobot-operator/pull/22)
+- new property `httpAuthSecret` to UptimeRobotMonitor resource, allows to reference username and password from Kubernetes secret [#23](https://github.com/brennerm/uptimerobot-operator/pull/23)
 
 ### Deprecated
 
 - `password` property of PublicStatusPage resource, use `passwordSecret` instead
+- `httpUsername` and `httpPassword` property of UptimeRobotMonitor resource, use `httpAuthSecret` instead
 
 ## [v0.3.0] - 2021-02-16
 

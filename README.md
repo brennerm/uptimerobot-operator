@@ -18,9 +18,6 @@ metadata:
   annotations:
     uroperator.brennerm.github.io/monitor.type: HTTPS
     uroperator.brennerm.github.io/monitor.interval: "600"
-    uroperator.brennerm.github.io/monitor.httpUsername: foo
-    uroperator.brennerm.github.io/monitor.httpPassword: s3cr3t
-    uroperator.brennerm.github.io/monitor.httpAuthType: BASIC_AUTH
 spec:
   rules:
   - host: brennerm.github.io
@@ -37,7 +34,7 @@ spec:
 
 a new monitor for the URL *https://brennerm.github.io* is automatically being created in your UptimeRobot account.
 
-Additionally you can create custom monitors using the UptimeRobotMonitor resource.
+The same monitor can also be created using the UptimeRobotMonitor resource like so:
 
 ```yaml
 apiVersion: uroperator.brennerm.github.io/v1beta1
@@ -48,10 +45,6 @@ spec:
   url: "https://brennerm.github.io"
   type: HTTPS
   interval: 600
-  httpAuthType: BASIC_AUTH
-  httpUsername: foo
-  httpPassword: s3cr3t
-
 ```
 
 The operator also supports creating public status pages. See below for details.
@@ -104,9 +97,10 @@ The UptimeRobotMonitor resource supports all current parameters for monitors tha
 |`keywordType`|`string`|Keyword type when using monitor type KEYWORD, one of: EXISTS,NOT_EXISTS|
 |`keywordValue`|`string`|Keyword value when using monitor type KEYWORD|
 |`interval`|`integer`|The interval for the monitoring check (300 seconds by default)|
-|`httpUsername`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
-|`httpPassword`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD|
-|`httpAuthType`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, one of: BASIC_AUTH,DIGEST|
+|`httpUsername`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, deprecated: use httpAuthSecret|
+|`httpPassword`|`string`|Used for password protected pages when using monitor type HTTP,HTTP or KEYWORD, deprecated: use httpAuthSecret|
+|`httpAuthSecret`|`string`|reference to a Kubernetes secret in the same namespace containing user and password for password protected pages when using monitor type HTTP,HTTPS or KEYWORD|
+|`httpAuthType`|`string`|Used for password protected pages when using monitor type HTTP,HTTPS or KEYWORD, one of: BASIC_AUTH,DIGEST|
 |`httpMethod`|`string`|The HTTP method to be used, one of: HEAD,GET,POST,PUT,PATCH,DELETE,OPTIONS|
 |`postType`|`string`|The format of data to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests|
 |`postContentType`|`string`|The Content-Type header to be sent with POST, PUT, PATCH, DELETE, OPTIONS requests, one of: TEXT_HTML,APPLICATION_JSON|
@@ -130,9 +124,6 @@ metadata:
   annotations:
     uroperator.brennerm.github.io/monitor.type: HTTPS
     uroperator.brennerm.github.io/monitor.interval: "600"
-    uroperator.brennerm.github.io/monitor.httpUsername: foo
-    uroperator.brennerm.github.io/monitor.httpPassword: s3cr3t
-    uroperator.brennerm.github.io/monitor.httpAuthType: BASIC_AUTH
 spec:
   rules:
 ...

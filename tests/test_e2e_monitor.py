@@ -3,7 +3,7 @@ import kubernetes.client as k8s_client
 import kubernetes.config as k8s_config
 import sys
 
-from .utils import namespace_handling, kopf_runner, NAMESPACE, DEFAULT_WAIT_TIME
+from .utils import namespace_handling, kopf_runner, create_basic_auth_secret, NAMESPACE, DEFAULT_WAIT_TIME
 
 import os
 import time
@@ -71,10 +71,12 @@ class TestDefaultOperator:
         url = 'https://foo.com'
         monitor_type = MonitorType.HTTPS
         http_auth_type = MonitorHttpAuthType.BASIC_AUTH
+        auth_secret_name = 'my-auth-secret'
         username = 'foo'
         password = 'bar'
 
-        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, httpAuthType=http_auth_type.name, httpUsername=username, httpPassword=password)
+        create_basic_auth_secret(NAMESPACE, auth_secret_name, username, password)
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, httpAuthType=http_auth_type.name, httpAuthSecret=auth_secret_name)
 
         monitors = uptime_robot.get_all_monitors()['monitors']
         assert len(monitors) == 1
@@ -89,10 +91,12 @@ class TestDefaultOperator:
         url = 'https://foo.com'
         monitor_type = MonitorType.HTTPS
         http_auth_type = MonitorHttpAuthType.DIGEST
+        auth_secret_name = 'my-auth-secret'
         username = 'foo'
         password = 'bar'
 
-        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, httpAuthType=http_auth_type.name, httpUsername=username, httpPassword=password)
+        create_basic_auth_secret(NAMESPACE, auth_secret_name, username, password)
+        create_k8s_ur_monitor(NAMESPACE, name, type=monitor_type.name, url=url, httpAuthType=http_auth_type.name, httpAuthSecret=auth_secret_name)
 
         monitors = uptime_robot.get_all_monitors()['monitors']
         assert len(monitors) == 1

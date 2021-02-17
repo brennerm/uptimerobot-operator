@@ -4,7 +4,6 @@ import kubernetes.config as k8s_config
 import kubernetes.client as k8s_client
 
 from crds import constants
-from crds import monitor
 
 class K8s:
     def __init__(self):
@@ -18,22 +17,6 @@ class K8s:
 
         self.custom_objects_api = k8s_client.CustomObjectsApi()
         self.core_api = k8s_client.CoreV1Api()
-
-    @staticmethod
-    def construct_k8s_ur_monitor_body(namespace, name=None, **spec):
-        metadata = {
-            'namespace': namespace
-        }
-
-        if name:
-            metadata['name'] = name
-
-        return {
-            'apiVersion': f'{constants.GROUP}/{monitor.MonitorV1Beta1.version}',
-            'kind': monitor.MonitorV1Beta1.kind,
-            'metadata': metadata,
-            'spec': spec
-        }
 
     def create_k8s_crd_obj_with_body(self, crd, namespace, body):
         return self.custom_objects_api.create_namespaced_custom_object(

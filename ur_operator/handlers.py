@@ -317,7 +317,7 @@ def on_ingress_create(name: str, namespace: str, annotations: dict, spec: dict, 
         else:
             monitor_spec['url'] = host
 
-        monitor_body = K8s.construct_k8s_ur_monitor_body(
+        monitor_body = MonitorV1Beta1.construct_k8s_ur_monitor_body(
             namespace, name=f"{name}-{index}", **MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
@@ -360,7 +360,7 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
 
         monitor_name = f"{name}-{index}"
 
-        monitor_body = K8s.construct_k8s_ur_monitor_body(
+        monitor_body = MonitorV1Beta1.construct_k8s_ur_monitor_body(
             namespace, name=monitor_name, **MonitorV1Beta1.annotations_to_spec_dict(monitor_spec))
         kopf.adopt(monitor_body)
 
@@ -379,16 +379,16 @@ def on_ingress_update(name: str, namespace: str, annotations: dict, spec: dict, 
         index += 1
 
 @kopf.on.create(GROUP, MonitorV1Beta1.version, MonitorV1Beta1.plural)
-def on_create(name: str, spec: dict, logger, **_):
+def on_create(namespace: str, name: str, spec: dict, logger, **_):
     identifier = create_monitor(
         logger,
-        **MonitorV1Beta1.spec_to_request_dict(name, spec)
+        **MonitorV1Beta1.spec_to_request_dict(namespace, name, spec)
     )
 
     return {MONITOR_ID_KEY: identifier}
 
 @kopf.on.update(GROUP, MonitorV1Beta1.version, MonitorV1Beta1.plural)
-def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
+def on_update(namespace: str, name: str, spec: dict, status: dict, diff: list, logger, **_):
     try:
         identifier = get_identifier(status)
     except KeyError as error:
@@ -401,13 +401,13 @@ def on_update(name: str, spec: dict, status: dict, diff: list, logger, **_):
 
         identifier = create_monitor(
             logger,
-            **MonitorV1Beta1.spec_to_request_dict(name, spec)
+            **MonitorV1Beta1.spec_to_request_dict(namespace, name, spec)
         )
     else:
         identifier = update_monitor(
             logger,
             identifier,
-            **MonitorV1Beta1.spec_to_request_dict(name, spec)
+            **MonitorV1Beta1.spec_to_request_dict(namespace, name, spec)
         )
 
     return {MONITOR_ID_KEY: identifier}
