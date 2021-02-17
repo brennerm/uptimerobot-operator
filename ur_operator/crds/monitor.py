@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+import base64
 import enum
 import json
 
 import kubernetes.client as k8s_client
 
+from k8s import K8s
 from .constants import GROUP
 from .utils import camel_to_snake_case
 
@@ -121,11 +123,15 @@ class MonitorV1Beta1:
         ),
         'httpUsername': k8s_client.V1JSONSchemaProps(
             type='string',
-            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}'
+            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}, deprecated: use httpAuthSecret'
         ),
         'httpPassword': k8s_client.V1JSONSchemaProps(
             type='string',
-            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}'
+            description=f'Used for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}, deprecated: use httpAuthSecret'
+        ),
+        'httpAuthSecret': k8s_client.V1JSONSchemaProps(
+            type='string',
+            description=f'reference to a Kubernetes secret in the same namespace containing user and password for password protected pages when using monitor type {MonitorType.HTTP.name},{MonitorType.HTTPS.name} or {MonitorType.KEYWORD.name}'
         ),
         'httpAuthType': k8s_client.V1JSONSchemaProps(
             type='string',
@@ -217,11 +223,20 @@ class MonitorV1Beta1:
     )
 
     @staticmethod
-    def spec_to_request_dict(name: str, spec: dict) -> dict:
+    def spec_to_request_dict(namespace:str, name: str, spec: dict) -> dict:
+        k8s = K8s()
+
         # convert all keys from camel to snake case
         request_dict = {camel_to_snake_case(k): v for k, v in spec.items()}
         request_dict['friendly_name'] = request_dict.get('friendly_name', name)
         request_dict['type'] = MonitorType[spec['type']].value
+
+        if 'http_auth_secret' in request_dict:
+            secret = k8s.get_secret(namespace, request_dict['http_auth_secret'])
+
+            request_dict['http_username'] = base64.b64decode(secret.data['username']).decode()
+            request_dict['http_password'] = base64.b64decode(secret.data['password']).decode()
+            request_dict.pop('http_auth_secret')
 
         # map enum values
         for key, enum_class in {
@@ -255,3 +270,21 @@ class MonitorV1Beta1:
                 spec[key] = value
 
         return spec
+
+    @staticmethod
+    def construct_k8s_ur_monitor_body(namespace, name=None, **spec):
+        metadata = {
+            'namespace': namespace
+        }
+
+        if name:
+            metadata['name'] = name
+
+        return {
+            'apiVersion': f'{GROUP}/{MonitorV1Beta1.version}',
+            'kind': MonitorV1Beta1.kind,
+            'metadata': metadata,
+            'spec': spec
+        }
+
+

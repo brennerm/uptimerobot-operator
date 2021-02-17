@@ -130,6 +130,4 @@ class PspV1Beta1:
                                            ].value if key in request_dict else None
 
         # drop None entries
-        print(request_dict)
-
         return {k: v for k, v in request_dict.items() if v is not None}
