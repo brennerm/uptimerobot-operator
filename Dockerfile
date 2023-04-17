@@ -4,7 +4,7 @@ ENV KOPF_OPTS="--all-namespaces"
 RUN pip install pipenv
 WORKDIR /app
 ADD Pipfile /app
-RUN pipenv lock --keep-outdated --requirements > requirements.txt
+RUN pipenv lock; pipenv requirements > requirements.txt
 RUN apk --update add gcc build-base
 RUN pip install -r requirements.txt
 ADD ur_operator /app/ur_operator
