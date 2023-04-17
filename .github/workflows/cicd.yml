@@ -47,24 +47,49 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: nelonoel/branch-name@v1.0.1
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2.5.0
+      - name: set tags
+        id: set-tags
+        run: |
+          IMAGENAME=$(echo ${{ github.repository }} | sed 's/${{ github.repository_owner }}\///g')
+          if [ "${{ github.ref }}" == "refs/heads/master" ] && [ "${{ github.event_name }}" == "push" ]; then
+            VERSION="${{ env.BRANCH_NAME }}"
+            TAGS="ghcr.io/${{ github.repository_owner }}/${IMAGENAME}:${VERSION}"
+          elif  [ "${{ github.ref }}" == "refs/tags/v* "] && [ "${{ github.event_name }}" == "push" ]; then
+            VERSION="${GITHUB_REF##*/}"
+            TAGS="ghcr.io/${{ github.repository_owner }}/${IMAGENAME}:latest,ghcr.io/${{ github.repository_owner }}/${IMAGENAME}:${VERSION}"
+          fi
+          echo ::set-output name=tags::${TAGS}
+          echo ::set-output name=imagename::${IMAGENAME}
+          echo ::set-output name=version::${VERSION}
+          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.CR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Docker image
-        run: docker build . --tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }}
-      - name: Push Docker image for branch
-        if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
-        run: docker push ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }}
-      - name: Push Docker image for tag
-        if: ${{ startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push' }}
-        run: |
-          docker tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }} ghcr.io/brennerm/uptimerobot-operator:latest
-          docker tag ghcr.io/brennerm/uptimerobot-operator:${{ env.BRANCH_NAME }} ghcr.io/brennerm/uptimerobot-operator:${GITHUB_REF##*/}
-          docker push ghcr.io/brennerm/uptimerobot-operator:latest
-          docker push ghcr.io/brennerm/uptimerobot-operator:${GITHUB_REF##*/}
+        id: docker_build
+        uses: docker/build-push-action@v4.0.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: "linux/amd64,linux/arm/v7,linux/arm/v6,linux/arm64"
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.set-tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=${{ steps.set-tags.outputs.imagename }}
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.version=${{ steps.set-tags.outputs.version }}
+            org.opencontainers.image.created=${{ steps.set-tags.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=${{ github.event.repository.license.spdx_id }}
 
   build_helm_chart:
     runs-on: ubuntu-latest
